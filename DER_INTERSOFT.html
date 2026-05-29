@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Intersoft · DER Físico v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══ TOKENS ════════════════════════════════════════════ */
+:root{
+  --bg:#0a0f1e; --surface:#0f1629; --surface2:#151e35;
+  --border:#1e2d4a; --border2:#243554;
+  --txt:#c8d8f0; --muted:#5a7090; --accent:#3b82f6;
+  --accent2:#06b6d4; --gold:#f59e0b;
+  --pk-bg:rgba(245,158,11,.18); --pk-txt:#f59e0b;
+  --fk-bg:rgba(6,182,212,.15);  --fk-txt:#06b6d4;
+  --line:#2a4060; --line-act:#3b82f6;
+  --row-hover:rgba(59,130,246,.06);
+  --shadow:0 4px 20px rgba(0,0,0,.4);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.5);
+}
+[data-theme="light"]{
+  --bg:#f0f4fb; --surface:#ffffff; --surface2:#f5f8ff;
+  --border:#d1dae9; --border2:#bccadf;
+  --txt:#0f1c2e; --muted:#5a6f8c; --accent:#2563eb;
+  --accent2:#0891b2; --gold:#d97706;
+  --pk-bg:rgba(245,158,11,.12); --pk-txt:#b45309;
+  --fk-bg:rgba(8,145,178,.1);   --fk-txt:#0e7490;
+  --line:#b0c4dd; --line-act:#2563eb;
+  --row-hover:rgba(37,99,235,.04);
+  --shadow:0 4px 14px rgba(0,0,0,.08);
+  --shadow-lg:0 12px 32px rgba(0,0,0,.12);
+}
+/* ═══ RESET ════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+html,body{height:100%;overflow:hidden;font-family:'Syne',sans-serif;
+  background:var(--bg);color:var(--txt);transition:background .3s,color .3s}
+/* ═══ LAYOUT ═══════════════════════════════════════════ */
+body{display:flex;flex-direction:column}
+#topbar{flex:none;height:54px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 18px;gap:8px;z-index:30;
+  box-shadow:var(--shadow)}
+#workspace{flex:1;display:flex;overflow:hidden}
+#sidebar{width:256px;flex:none;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden}
+#canvas-area{flex:1;position:relative;overflow:hidden;cursor:grab}
+#canvas-area.panning{cursor:grabbing}
+/* Grid bg */
+#canvas-area::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(circle,var(--border) 1px,transparent 1px);
+  background-size:28px 28px;opacity:.5}
+/* ═══ TOPBAR ════════════════════════════════════════════ */
+.brand{display:flex;align-items:center;gap:9px;margin-right:6px;flex-shrink:0}
+.logo{width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#2563eb,#06b6d4);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-size:15px;letter-spacing:-.5px}
+.brand-txt{display:flex;flex-direction:column;line-height:1.1}
+.brand-txt strong{font-size:13px;font-weight:700;letter-spacing:-.2px}
+.brand-txt span{font-size:9px;color:var(--muted);font-family:'IBM Plex Mono';
+  text-transform:uppercase;letter-spacing:.08em}
+.sep{width:1px;height:22px;background:var(--border);margin:0 4px;flex-shrink:0}
+.tbtn{background:transparent;border:1px solid var(--border);border-radius:7px;
+  padding:5px 11px;font-size:11px;cursor:pointer;color:var(--muted);
+  font-family:'Syne';font-weight:600;letter-spacing:.01em;
+  display:inline-flex;align-items:center;gap:5px;transition:.15s;white-space:nowrap;flex-shrink:0}
+.tbtn svg{width:13px;height:13px;flex:none}
+.tbtn:hover{border-color:var(--accent);color:var(--txt);
+  background:rgba(59,130,246,.08)}
+.tbtn.on{background:rgba(59,130,246,.12);border-color:var(--accent);color:var(--accent)}
+#zoom-display{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);
+  min-width:42px;text-align:center;flex-shrink:0}
+/* ═══ SIDEBAR ═══════════════════════════════════════════ */
+.sb-head{padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sb-search{width:100%;padding:7px 10px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:7px;color:var(--txt);
+  font-family:'Syne';font-size:11px;outline:none;transition:.15s}
+.sb-search::placeholder{color:var(--muted)}
+.sb-search:focus{border-color:var(--accent);background:var(--surface)}
+.sb-body{flex:1;overflow-y:auto;padding:10px 10px 14px}
+.sb-body::-webkit-scrollbar{width:4px}
+.sb-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.sb-mod{display:flex;align-items:center;gap:6px;padding:5px 8px;
+  margin:10px 0 3px;border-radius:6px;font-size:10px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase}
+.sb-item{display:flex;align-items:center;justify-content:space-between;
+  padding:5px 10px;margin:1px 0;border-radius:6px;cursor:pointer;
+  font-size:11px;font-family:'IBM Plex Mono';color:var(--muted);
+  border-left:2px solid transparent;transition:.12s}
+.sb-item:hover{background:var(--surface2);color:var(--txt);border-left-color:var(--accent)}
+.sb-item.sel{background:rgba(59,130,246,.1);color:var(--accent);
+  border-left-color:var(--accent);font-weight:600}
+.sb-item .rc{font-size:9px;padding:1px 6px;border-radius:8px;
+  background:var(--surface2);border:1px solid var(--border)}
+.sb-foot{padding:10px 14px;border-top:1px solid var(--border);flex-shrink:0;
+  display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sb-stat{background:var(--surface2);border-radius:7px;padding:6px 10px;
+  border:1px solid var(--border)}
+.sb-stat-v{font-size:18px;font-weight:800;color:var(--accent);
+  font-family:'IBM Plex Mono';line-height:1}
+.sb-stat-l{font-size:8px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.06em;margin-top:1px}
+/* ═══ CANVAS ════════════════════════════════════════════ */
+#svg-root{position:absolute;top:0;left:0;overflow:visible;transform-origin:0 0;will-change:transform}
+/* ═══ SVG TABLE STYLES ══════════════════════════════════ */
+.tbl-shadow{filter:drop-shadow(0 4px 14px rgba(0,0,0,.35))}
+.tbl-bg{fill:var(--surface);stroke:var(--border2);stroke-width:1.5}
+.tbl-hdr{fill:var(--surface2)}
+.tbl-hdr-line{stroke:var(--border2);stroke-width:1}
+.tbl-name{font-family:'Syne';font-weight:800;font-size:12px;fill:var(--txt);
+  text-anchor:middle;dominant-baseline:middle}
+.tbl-accent{/* color set per-entity via attribute */}
+.row-bg{fill:transparent;transition:fill .1s}
+.row-bg:hover{fill:var(--row-hover)}
+.row-divider{stroke:var(--border);stroke-width:.5;opacity:.5}
+.row-badge{font-family:'IBM Plex Mono';font-size:8px;font-weight:600;text-anchor:middle;dominant-baseline:middle}
+.row-name{font-family:'IBM Plex Mono';font-size:10px;fill:var(--txt);dominant-baseline:middle}
+.row-type{font-family:'IBM Plex Mono';font-size:8.5px;fill:var(--muted);dominant-baseline:middle;text-anchor:end}
+/* ═══ RELATIONS ════════════════════════════════════════ */
+.rel-path{stroke:var(--line);stroke-width:1.8;fill:none;stroke-linecap:round}
+.rel-path.act{stroke:var(--line-act);stroke-width:2.5;
+  filter:drop-shadow(0 0 4px rgba(59,130,246,.4))}
+.rel-path.dim{opacity:.1}
+.crow{stroke:var(--line);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.crow.act{stroke:var(--line-act);stroke-width:2.4}
+.crow.dim{opacity:.1}
+/* ═══ INFO PANEL ════════════════════════════════════════ */
+#info-panel{position:absolute;top:16px;right:16px;width:310px;
+  background:var(--surface);border:1px solid var(--border2);border-radius:12px;
+  box-shadow:var(--shadow-lg);z-index:30;overflow:hidden;
+  transform:translateX(115%);transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
+#info-panel.open{transform:translateX(0)}
+.ip-hd{padding:12px 14px;border-bottom:1px solid var(--border);
+  background:var(--surface2);display:flex;align-items:center;gap:9px}
+.ip-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ip-name{font-weight:700;font-size:13px;font-family:'Syne';flex:1}
+.ip-mod{font-size:9px;color:var(--muted);font-family:'IBM Plex Mono';
+  text-transform:uppercase;letter-spacing:.07em}
+.ip-x{background:none;border:none;cursor:pointer;color:var(--muted);
+  font-size:19px;padding:2px 6px;border-radius:4px;transition:.12s}
+.ip-x:hover{background:var(--surface);color:var(--txt)}
+.ip-body{padding:12px 14px;max-height:calc(100vh - 180px);overflow-y:auto}
+.ip-body::-webkit-scrollbar{width:4px}
+.ip-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.ip-row{display:flex;justify-content:space-between;font-size:11px;
+  margin-bottom:5px;font-family:'IBM Plex Mono'}
+.ip-lbl{color:var(--muted)}
+.ip-val{font-weight:600;color:var(--txt)}
+.ip-sec{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--accent);margin:12px 0 6px;font-family:'IBM Plex Mono'}
+.attr-tbl{width:100%;border-collapse:collapse;font-size:10px;font-family:'IBM Plex Mono'}
+.attr-tbl td{padding:3px 5px;border-bottom:1px dashed var(--border)}
+.kpk{background:var(--pk-bg);color:var(--pk-txt);padding:1px 5px;
+  border-radius:4px;font-weight:700;font-size:8px}
+.kfk{background:var(--fk-bg);color:var(--fk-txt);padding:1px 5px;
+  border-radius:4px;font-weight:700;font-size:8px}
+.ip-pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.ip-pill{background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:2px 9px;font-size:9.5px;font-family:'IBM Plex Mono';
+  cursor:pointer;color:var(--accent);transition:.12s}
+.ip-pill:hover{border-color:var(--accent);background:rgba(59,130,246,.1)}
+/* ═══ FOCUS EXIT ════════════════════════════════════════ */
+#focus-exit{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--accent);color:#fff;border:none;border-radius:40px;
+  padding:7px 18px;font-size:12px;font-weight:600;font-family:'Syne';
+  cursor:pointer;z-index:25;display:none;box-shadow:var(--shadow-lg);
+  letter-spacing:.02em;transition:.15s}
+#focus-exit.vis{display:block}
+#focus-exit:hover{filter:brightness(1.12);transform:translateX(-50%) translateY(-1px)}
+</style>
+</head>
+<body>
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="brand">
+    <div class="logo">D</div>
+    <div class="brand-txt"><strong>Intersoft DER</strong><span>Crow's Foot · v2</span></div>
+  </div>
+  <div class="sep"></div>
+  <button class="tbtn" onclick="zoomIn()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+  <span id="zoom-display">18%</span>
+  <button class="tbtn" onclick="zoomOut()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/></svg>
+  </button>
+  <button class="tbtn" onclick="fitAll()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    Ajustar
+  </button>
+  <div class="sep"></div>
+  <button class="tbtn" id="btn-hi" onclick="toggleHighlight()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+    Resaltar
+  </button>
+  <button class="tbtn" onclick="toggleTheme()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    Tema
+  </button>
+  <button class="tbtn" onclick="exportSVG()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    SVG
+  </button>
+  <button class="tbtn" onclick="resetPositions()" style="margin-left:auto">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5"/></svg>
+    Reset
+  </button>
+</div>
+
+<!-- WORKSPACE -->
+<div id="workspace">
+  <div id="sidebar">
+    <div class="sb-head">
+      <input class="sb-search" id="sb-search" placeholder="Buscar tabla…" oninput="filterSidebar(this.value)">
+    </div>
+    <div class="sb-body" id="sb-list"></div>
+    <div class="sb-foot">
+      <div class="sb-stat"><div class="sb-stat-v" id="st-ents">0</div><div class="sb-stat-l">Tablas</div></div>
+      <div class="sb-stat"><div class="sb-stat-v" id="st-rels">0</div><div class="sb-stat-l">Relaciones</div></div>
+    </div>
+  </div>
+
+  <div id="canvas-area">
+    <svg id="svg-root" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="cp-hdr-TMPL"><rect x="0" y="0" width="W" height="HDR_H" rx="8" ry="8"/></clipPath>
+      </defs>
+      <g id="rels-layer"></g>
+      <g id="ents-layer"></g>
+    </svg>
+
+    <div id="info-panel">
+      <div class="ip-hd">
+        <div class="ip-dot" id="ip-dot"></div>
+        <div><div class="ip-name" id="ip-name">Tabla</div><div class="ip-mod" id="ip-mod">Módulo</div></div>
+        <button class="ip-x" onclick="clearSel()">×</button>
+      </div>
+      <div class="ip-body">
+        <div class="ip-row"><span class="ip-lbl">FK salientes</span><span class="ip-val" id="ip-cnt">0</span></div>
+        <div class="ip-row"><span class="ip-lbl">Atributos</span><span class="ip-val" id="ip-nattr">0</span></div>
+        <div class="ip-sec">Atributos</div>
+        <table class="attr-tbl"><thead><tr><th style="text-align:left;color:var(--muted);font-size:9px;padding:2px 5px">Key</th><th style="text-align:left;color:var(--muted);font-size:9px">Campo</th><th style="text-align:left;color:var(--muted);font-size:9px">Tipo</th></tr></thead><tbody id="ip-tbody"></tbody></table>
+        <div class="ip-sec">Relacionada con</div>
+        <div class="ip-pills" id="ip-pills"></div>
+      </div>
+    </div>
+
+    <button id="focus-exit" onclick="exitFocus()">🔍 Salir del enfoque</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   DATA MODEL
+══════════════════════════════════════════════════════════ */
+const HDR_H = 30;   // header height
+const ROW_H = 20;   // attribute row height
+const TW    = 248;  // table width (all same for clean alignment)
+const PAD_X = 10;   // horizontal text padding
+
+function tableH(n){ return HDR_H + n * ROW_H + 6; } // +6 bottom padding
+
+const ENTITIES_DEF = {
+  "EMPRESA":        {x:2000,y:1600,module:"Tenant",color:"#f97316",
+    attrs:[{n:"id_empresa",t:"UUID",pk:1},{n:"nombre",t:"VARCHAR(100)"},{n:"nit",t:"VARCHAR(20)"},{n:"plan",t:"ENUM"},{n:"estado",t:"BOOLEAN"}]},
+  "SUSCRIPCION":    {x:1400,y:1000,module:"Tenant",color:"#f97316",
+    attrs:[{n:"id_suscripcion",t:"UUID",pk:1},{n:"plan",t:"VARCHAR(50)"},{n:"monto",t:"DECIMAL(10,2)"},{n:"fecha_inicio",t:"DATE"},{n:"fk_empresa",t:"UUID",fk:1,ref:"EMPRESA"}]},
+  "CONFIG":         {x:2200,y:1000,module:"Tenant",color:"#f97316",
+    attrs:[{n:"id_config",t:"UUID",pk:1},{n:"clave",t:"VARCHAR(100)"},{n:"valor",t:"TEXT"},{n:"fk_empresa",t:"UUID",fk:1,ref:"EMPRESA"}]},
+  "USUARIO":        {x:3000,y:1600,module:"Auth",color:"#3b82f6",
+    attrs:[{n:"id_usuario",t:"UUID",pk:1},{n:"nombre",t:"VARCHAR(100)"},{n:"email",t:"VARCHAR(120)"},{n:"hash",t:"VARCHAR(255)"},{n:"fk_empresa",t:"UUID",fk:1,ref:"EMPRESA"},{n:"fk_rol",t:"UUID",fk:1,ref:"ROL"}]},
+  "ROL":            {x:3800,y:1000,module:"Auth",color:"#3b82f6",
+    attrs:[{n:"id_rol",t:"UUID",pk:1},{n:"nombre",t:"VARCHAR(50)"},{n:"descripcion",t:"TEXT"}]},
+  "PERMISO":        {x:4600,y:1600,module:"Auth",color:"#3b82f6",
+    attrs:[{n:"id_permiso",t:"UUID",pk:1},{n:"recurso",t:"VARCHAR(100)"},{n:"accion",t:"VARCHAR(50)"}]},
+  "ROL_PERMISO":    {x:4200,y:2400,module:"Auth",color:"#3b82f6",
+    attrs:[{n:"fk_rol",t:"UUID",fk:1,ref:"ROL"},{n:"fk_permiso",t:"UUID",fk:1,ref:"PERMISO"},{n:"asignado_el",t:"TIMESTAMP"}]},
+  "VENTA":          {x:3000,y:2800,module:"Sales",color:"#ef4444",
+    attrs:[{n:"id_venta",t:"UUID",pk:1},{n:"fecha",t:"TIMESTAMP"},{n:"total",t:"DECIMAL(12,2)"},{n:"fk_usuario",t:"UUID",fk:1,ref:"USUARIO"},{n:"fk_metodo_pago",t:"UUID",fk:1,ref:"METODO_PAGO"}]},
+  "METODO_PAGO":    {x:3800,y:2800,module:"Sales",color:"#ef4444",
+    attrs:[{n:"id_metodo",t:"UUID",pk:1},{n:"tipo",t:"VARCHAR(30)"},{n:"activo",t:"BOOLEAN"}]},
+  "DETALLE_VENTA":  {x:2600,y:3700,module:"Sales",color:"#ef4444",
+    attrs:[{n:"id_detalle",t:"UUID",pk:1},{n:"cantidad",t:"INT"},{n:"precio_unit",t:"DECIMAL(10,2)"},{n:"fk_venta",t:"UUID",fk:1,ref:"VENTA"},{n:"fk_producto",t:"UUID",fk:1,ref:"PRODUCTO"}]},
+  "PRODUCTO":       {x:3800,y:3700,module:"Inventory",color:"#22c55e",
+    attrs:[{n:"id_producto",t:"UUID",pk:1},{n:"nombre",t:"VARCHAR(150)"},{n:"precio",t:"DECIMAL(10,2)"},{n:"stock",t:"INT"},{n:"fk_categoria",t:"UUID",fk:1,ref:"CATEGORIA"}]},
+  "CATEGORIA":      {x:4700,y:3700,module:"Inventory",color:"#22c55e",
+    attrs:[{n:"id_categoria",t:"UUID",pk:1},{n:"nombre",t:"VARCHAR(80)"},{n:"descripcion",t:"TEXT"}]},
+  "MOVIMIENTO_INV": {x:3800,y:4600,module:"Inventory",color:"#22c55e",
+    attrs:[{n:"id_mov",t:"UUID",pk:1},{n:"tipo",t:"ENUM"},{n:"cantidad",t:"INT"},{n:"fecha",t:"TIMESTAMP"},{n:"fk_producto",t:"UUID",fk:1,ref:"PRODUCTO"}]},
+  "REPORTE":        {x:800,y:1600,module:"Reports",color:"#eab308",
+    attrs:[{n:"id_reporte",t:"UUID",pk:1},{n:"titulo",t:"VARCHAR(100)"},{n:"fecha",t:"TIMESTAMP"},{n:"fk_rol",t:"UUID",fk:1,ref:"ROL"}]},
+  "DASHBOARD":      {x:200,y:2400,module:"Reports",color:"#eab308",
+    attrs:[{n:"id_dash",t:"UUID",pk:1},{n:"layout",t:"JSONB"},{n:"fk_reporte",t:"UUID",fk:1,ref:"REPORTE"}]},
+  "LOG_AUDITORIA":  {x:4200,y:3200,module:"Logs",color:"#f59e0b",
+    attrs:[{n:"id_log",t:"UUID",pk:1},{n:"accion",t:"VARCHAR(100)"},{n:"tabla",t:"VARCHAR(50)"},{n:"fecha",t:"TIMESTAMP"},{n:"fk_rol_permiso",t:"UUID",fk:1,ref:"ROL_PERMISO"}]},
+  "CAMARA":         {x:5400,y:2200,module:"Cameras",color:"#64748b",
+    attrs:[{n:"id_camara",t:"UUID",pk:1},{n:"ubicacion",t:"VARCHAR(100)"},{n:"url_stream",t:"VARCHAR(255)"}]},
+  "GRABACION":      {x:6200,y:2000,module:"Cameras",color:"#64748b",
+    attrs:[{n:"id_grab",t:"UUID",pk:1},{n:"url",t:"VARCHAR(255)"},{n:"duracion_s",t:"INT"},{n:"fk_camara",t:"UUID",fk:1,ref:"CAMARA"}]},
+  "ALERTA_CAMARA":  {x:6200,y:2600,module:"Cameras",color:"#64748b",
+    attrs:[{n:"id_alerta",t:"UUID",pk:1},{n:"mensaje",t:"TEXT"},{n:"tipo",t:"VARCHAR(50)"},{n:"fk_camara",t:"UUID",fk:1,ref:"CAMARA"}]},
+  "IA_CONVERSACION":{x:800,y:800,module:"IA",color:"#a855f7",
+    attrs:[{n:"id_conv",t:"UUID",pk:1},{n:"titulo",t:"VARCHAR(100)"},{n:"modelo",t:"VARCHAR(30)"},{n:"fk_usuario",t:"UUID",fk:1,ref:"USUARIO"}]},
+  "IA_MENSAJE":     {x:200,y:800,module:"IA",color:"#a855f7",
+    attrs:[{n:"id_msg",t:"UUID",pk:1},{n:"rol",t:"ENUM"},{n:"contenido",t:"TEXT"},{n:"tokens",t:"INT"},{n:"fk_conv",t:"UUID",fk:1,ref:"IA_CONVERSACION"}]},
+};
+
+// Compute height from attr count
+const DEFAULT_POS = {};
+for(const id in ENTITIES_DEF){
+  const e = ENTITIES_DEF[id];
+  e.h = tableH(e.attrs.length);
+  e.w = TW;
+  DEFAULT_POS[id] = {x:e.x, y:e.y};
+}
+
+const RELATIONS = [
+  {fr:"EMPRESA",     to:"SUSCRIPCION",     cf:"1",to2:"n"},
+  {fr:"EMPRESA",     to:"CONFIG",          cf:"1",to2:"n"},
+  {fr:"EMPRESA",     to:"USUARIO",         cf:"1",to2:"n"},
+  {fr:"USUARIO",     to:"ROL",             cf:"n",to2:"1"},
+  {fr:"USUARIO",     to:"VENTA",           cf:"1",to2:"n"},
+  {fr:"ROL",         to:"ROL_PERMISO",     cf:"1",to2:"n"},
+  {fr:"ROL",         to:"REPORTE",         cf:"1",to2:"n"},
+  {fr:"PERMISO",     to:"ROL_PERMISO",     cf:"1",to2:"n"},
+  {fr:"VENTA",       to:"METODO_PAGO",     cf:"n",to2:"1"},
+  {fr:"VENTA",       to:"DETALLE_VENTA",   cf:"1",to2:"n"},
+  {fr:"PRODUCTO",    to:"DETALLE_VENTA",   cf:"1",to2:"n"},
+  {fr:"PRODUCTO",    to:"CATEGORIA",       cf:"n",to2:"1"},
+  {fr:"PRODUCTO",    to:"MOVIMIENTO_INV",  cf:"1",to2:"n"},
+  {fr:"REPORTE",     to:"DASHBOARD",       cf:"1",to2:"n"},
+  {fr:"ROL_PERMISO", to:"LOG_AUDITORIA",   cf:"1",to2:"n"},
+  {fr:"CAMARA",      to:"GRABACION",       cf:"1",to2:"n"},
+  {fr:"CAMARA",      to:"ALERTA_CAMARA",   cf:"1",to2:"n"},
+  {fr:"USUARIO",     to:"IA_CONVERSACION", cf:"1",to2:"n"},
+  {fr:"IA_CONVERSACION",to:"IA_MENSAJE",   cf:"1",to2:"n"},
+];
+
+/* ══════════════════════════════════════════════════════════
+   STATE  — declared FIRST (fixes BUG: used before declaration)
+══════════════════════════════════════════════════════════ */
+let G = {
+  zoom: 0.18, panX: 0, panY: 0,
+  selId: null, focusMode: false, focusId: null,
+  highlightOn: true,
+};
+let ENTS = {};
+const relCount = {};
+const NS = "http://www.w3.org/2000/svg";
+
+/* ══════════════════════════════════════════════════════════
+   MODULE COLORS / ICONS
+══════════════════════════════════════════════════════════ */
+const MOD_ICONS = {Tenant:"🏢",Auth:"🔐",Sales:"💰",Inventory:"📦",
+  IA:"🤖",Reports:"📊",Logs:"📝",Cameras:"📹"};
+
+/* ══════════════════════════════════════════════════════════
+   SVG HELPER
+══════════════════════════════════════════════════════════ */
+function svgEl(tag, attrs, cls){
+  const el = document.createElementNS(NS, tag);
+  if(cls) el.setAttribute("class", cls);
+  for(const [k,v] of Object.entries(attrs||{})) el.setAttribute(k, String(v));
+  return el;
+}
+
+/* ══════════════════════════════════════════════════════════
+   GEOMETRY
+══════════════════════════════════════════════════════════ */
+function entCx(id){ const e=ENTS[id]; return e.x+e.w/2; }
+function entCy(id){ const e=ENTS[id]; return e.y+e.h/2; }
+
+// FIX BUG 2+16: rectEdge uses actual rect borders, returns exact wall intersection
+function rectEdge(id, tx, ty){
+  const e=ENTS[id];
+  const cx=e.x+e.w/2, cy=e.y+e.h/2;
+  const dx=tx-cx, dy=ty-cy;
+  const adx=Math.abs(dx), ady=Math.abs(dy);
+  if(adx<0.01 && ady<0.01) return {x:cx,y:cy};
+  const hw=e.w/2, hh=e.h/2;
+  if(adx*hh > ady*hw){
+    const s=dx>0?1:-1;
+    return {x:cx+s*hw, y:cy+dy*(hw/adx)};
+  }
+  const s=dy>0?1:-1;
+  return {x:cx+dx*(hh/ady), y:cy+s*hh};
+}
+
+// Get tangent direction at a border point (pointing AWAY from the entity = outward)
+// FIX BUG 2+3+4+16: compute direction FROM border point outward (not from center)
+function outDir(id, bx, by){
+  const e=ENTS[id];
+  const cx=e.x+e.w/2, cy=e.y+e.h/2;
+  // direction from center → border = inward; reverse it = outward (away from entity)
+  const dx=bx-cx, dy=by-cy;
+  const len=Math.hypot(dx,dy)||1;
+  return {x:dx/len, y:dy/len};
+}
+
+/* ══════════════════════════════════════════════════════════
+   CROW'S FOOT SYMBOLS
+   FIX BUG 3+4: all symbols drawn correctly relative to border point
+   outDir = unit vector pointing AWAY from the entity at the connection point
+   
+   "1" → one vertical bar, at distance OFFSET from border, perpendicular to edge
+   "n" → three lines fanning from border outward (crow foot)
+══════════════════════════════════════════════════════════ */
+function drawCrow(g, bx, by, od, card, cls){
+  // od = outward direction (away from entity)
+  const nx=-od.y, ny=od.x; // perpendicular to the edge direction
+  const OFFSET = 14;         // distance from border wall where symbol sits
+  const HALF   = 11;         // half-length of bar
+  const FAN    = 12;         // fan spread for "n"
+  const FAN_LEN= 18;         // length of crow-foot arms
+
+  const grp = svgEl("g",{},"");
+
+  if(card==="1"){
+    // Single vertical bar perpendicular to the line, at OFFSET distance from border
+    const bx2=bx+od.x*OFFSET, by2=by+od.y*OFFSET;
+    const l=svgEl("line",{x1:bx2+nx*HALF,y1:by2+ny*HALF,
+                           x2:bx2-nx*HALF,y2:by2-ny*HALF},"crow "+cls);
+    grp.appendChild(l);
+  } else {
+    // Crow foot: arms spread FROM border outward
+    // Origin is slightly inside the entity side (at border)
+    const ox=bx, oy=by;
+    // tip of crow = at FAN_LEN from border
+    const tx=bx+od.x*FAN_LEN, ty=by+od.y*FAN_LEN;
+    // left arm end
+    const lx=bx+od.x*4+nx*FAN, ly=by+od.y*4+ny*FAN;
+    // right arm end
+    const rx=bx+od.x*4-nx*FAN, ry=by+od.y*4-ny*FAN;
+
+    const lCenter=svgEl("line",{x1:tx,y1:ty,x2:ox,y2:oy},"crow "+cls);
+    const lLeft  =svgEl("line",{x1:tx,y1:ty,x2:lx,y2:ly},"crow "+cls);
+    const lRight =svgEl("line",{x1:tx,y1:ty,x2:rx,y2:ry},"crow "+cls);
+    grp.appendChild(lCenter);
+    grp.appendChild(lLeft);
+    grp.appendChild(lRight);
+  }
+  g.appendChild(grp);
+}
+
+/* ══════════════════════════════════════════════════════════
+   DRAW RELATION
+══════════════════════════════════════════════════════════ */
+function drawRelation(rel, g, isAct, isDim){
+  const src=ENTS[rel.fr], tgt=ENTS[rel.to];
+  if(!src||!tgt) return;
+
+  const c1={x:entCx(rel.fr),y:entCy(rel.fr)};
+  const c2={x:entCx(rel.to),y:entCy(rel.to)};
+
+  // Border points
+  const p0=rectEdge(rel.fr, c2.x, c2.y);
+  const p3=rectEdge(rel.to, c1.x, c1.y);
+
+  // Bezier control points (slight curve)
+  const dx=c2.x-c1.x, dy=c2.y-c1.y, dist=Math.hypot(dx,dy)||1;
+  const off=Math.min(dist*0.22, 80);
+  const px=-dy/dist*off, py=dx/dist*off;
+  const cp1={x:c1.x+dx*0.32+px, y:c1.y+dy*0.32+py};
+  const cp2={x:c2.x-dx*0.32+px, y:c2.y-dy*0.32+py};
+
+  const lineClass="rel-path"+(isAct?" act":isDim?" dim":"");
+  const path=svgEl("path",{d:`M${p0.x},${p0.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${p3.x},${p3.y}`},lineClass);
+  g.appendChild(path);
+
+  // FIX BUG 3+4: outDir computed from BORDER point, not from center
+  const od0=outDir(rel.fr, p0.x, p0.y);
+  const od3=outDir(rel.to, p3.x, p3.y);
+  const crowCls="crow"+(isAct?" act":isDim?" dim":"");
+  drawCrow(g, p0.x, p0.y, od0, rel.cf,  crowCls);
+  drawCrow(g, p3.x, p3.y, od3, rel.to2, crowCls);
+}
+
+/* ══════════════════════════════════════════════════════════
+   DRAW ENTITY  (FIX BUG 6+7+8+9: header clip, text baseline, type truncation)
+══════════════════════════════════════════════════════════ */
+function drawEntity(id){
+  const e=ENTS[id];
+  const isSelected = id===G.selId;
+  const inFocus = G.focusMode && id===G.focusId;
+  const isRelated = G.selId && RELATIONS.some(r=>(r.fr===G.selId&&r.to===id)||(r.to===G.selId&&r.fr===id));
+  const isDimmed = G.highlightOn && G.selId && !isSelected && !isRelated;
+  const isFocusDim = G.focusMode && !inFocus && !RELATIONS.some(r=>(r.fr===G.focusId&&r.to===id)||(r.to===G.focusId&&r.fr===id));
+
+  const grp=svgEl("g",{"data-id":id},"ent-g");
+  grp.setAttribute("transform",`translate(${e.x},${e.y})`);
+  if(isDimmed||isFocusDim) grp.style.opacity="0.12";
+
+  // FIX BUG 6: clipPath per entity for crisp header rounding
+  const clipId=`cp_${id}`;
+  const defs=svgEl("defs",{});
+  const cp=svgEl("clipPath",{id:clipId});
+  const cpRect=svgEl("rect",{x:0,y:0,width:e.w,height:HDR_H,rx:8,ry:8});
+  cp.appendChild(cpRect);
+  defs.appendChild(cp);
+  grp.appendChild(defs);
+
+  // Card background
+  const bg=svgEl("rect",{x:0,y:0,width:e.w,height:e.h,rx:8,ry:8},"tbl-bg");
+  if(isSelected||inFocus) bg.setAttribute("stroke",e.color);
+  if(isSelected) bg.setAttribute("stroke-width","2.5");
+  grp.appendChild(bg);
+
+  // Header with clip (FIX BUG 9)
+  const hdrG=svgEl("g",{"clip-path":`url(#${clipId})`});
+  const hdr=svgEl("rect",{x:0,y:0,width:e.w,height:HDR_H},"tbl-hdr");
+  hdrG.appendChild(hdr);
+  // Color accent stripe (left edge)
+  const stripe=svgEl("rect",{x:0,y:0,width:4,height:HDR_H,fill:e.color});
+  hdrG.appendChild(stripe);
+  grp.appendChild(hdrG);
+
+  // Header divider line
+  const hLine=svgEl("line",{x1:0,y1:HDR_H,x2:e.w,y2:HDR_H},"tbl-hdr-line");
+  grp.appendChild(hLine);
+
+  // Table name  
+  const title=svgEl("text",{x:e.w/2,y:HDR_H/2},"tbl-name");
+  title.setAttribute("dominant-baseline","middle");
+  title.setAttribute("fill",e.color);
+  title.textContent=id;
+  grp.appendChild(title);
+
+  // FIX BUG 7: use dominant-baseline and precise y coords
+  for(let i=0; i<e.attrs.length; i++){
+    const a=e.attrs[i];
+    const ry=HDR_H + i*ROW_H;
+    const cy=ry+ROW_H/2;  // center Y of row
+
+    // Row hover background
+    const rowBg=svgEl("rect",{x:1,y:ry,width:e.w-2,height:ROW_H},"row-bg");
+    grp.appendChild(rowBg);
+
+    // Row divider (except first)
+    if(i>0){
+      const div=svgEl("line",{x1:0,y1:ry,x2:e.w,y2:ry},"row-divider");
+      grp.appendChild(div);
+    }
+
+    // Badge column (fixed 32px)
+    if(a.pk||a.fk){
+      const BADGE_W=22, BADGE_H=12, BADGE_X=5;
+      const br=svgEl("rect",{x:BADGE_X,y:cy-BADGE_H/2,width:BADGE_W,height:BADGE_H,rx:3,
+        fill:a.pk?"var(--pk-bg)":"var(--fk-bg)"});
+      grp.appendChild(br);
+      const bt=svgEl("text",{x:BADGE_X+BADGE_W/2,y:cy},"row-badge");
+      bt.setAttribute("dominant-baseline","middle");
+      bt.setAttribute("fill",a.pk?"var(--pk-txt)":"var(--fk-txt)");
+      bt.textContent=a.pk?"PK":"FK";
+      grp.appendChild(bt);
+    }
+
+    // FIX BUG 8: compute available widths dynamically
+    const NAME_X = 32;
+    const TYPE_MAX_W = 72;
+    const NAME_MAX_W = e.w - NAME_X - TYPE_MAX_W - PAD_X;
+
+    // Field name
+    const nm=svgEl("text",{x:NAME_X,y:cy},"row-name");
+    nm.setAttribute("dominant-baseline","middle");
+    // Truncate name if too long
+    const maxChars=Math.floor(NAME_MAX_W/6.2);
+    nm.textContent=a.n.length>maxChars?a.n.slice(0,maxChars-1)+"…":a.n;
+    grp.appendChild(nm);
+
+    // Field type (right-aligned, truncated)
+    if(a.t){
+      const tp=svgEl("text",{x:e.w-PAD_X,y:cy},"row-type");
+      tp.setAttribute("dominant-baseline","middle");
+      const maxT=Math.floor(TYPE_MAX_W/5.4);
+      tp.textContent=a.t.length>maxT?a.t.slice(0,maxT-1)+"…":a.t;
+      grp.appendChild(tp);
+    }
+  }
+
+  grp.addEventListener("mousedown", ev=>startDragEnt(ev,id));
+  grp.addEventListener("click", ev=>{ev.stopPropagation(); selectEnt(id);});
+  grp.addEventListener("dblclick", ev=>{ev.stopPropagation(); enterFocus(id);});
+  return grp;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RENDER ALL
+   FIX BUG 1: renderAll rebuilds SVG (called only on state changes, not in drag)
+══════════════════════════════════════════════════════════ */
+function renderAll(){
+  const rl=document.getElementById("rels-layer");
+  const el=document.getElementById("ents-layer");
+  rl.innerHTML=""; el.innerHTML="";
+
+  // Draw relations first (under entities)
+  RELATIONS.forEach(rel=>{
+    const isAct = G.highlightOn && G.selId && (rel.fr===G.selId||rel.to===G.selId);
+    const isDim = G.highlightOn && G.selId && !isAct;
+    const inFocusAct = G.focusMode && (rel.fr===G.focusId||rel.to===G.focusId);
+    const inFocusDim = G.focusMode && !inFocusAct;
+    drawRelation(rel, rl, isAct||inFocusAct, isDim||inFocusDim);
+  });
+
+  // Draw entities on top
+  for(const id in ENTS) el.appendChild(drawEntity(id));
+}
+
+/* ══════════════════════════════════════════════════════════
+   INCREMENTAL POSITION UPDATE during drag (fast path)
+   FIX BUG 1: only moves the transform + redraws relations, no full rebuild
+══════════════════════════════════════════════════════════ */
+function updateDraggedEntity(id){
+  const e=ENTS[id];
+  const g=document.querySelector(`#ents-layer [data-id="${id}"]`);
+  if(g) g.setAttribute("transform",`translate(${e.x},${e.y})`);
+  // Redraw only relations layer
+  const rl=document.getElementById("rels-layer");
+  rl.innerHTML="";
+  RELATIONS.forEach(rel=>{
+    const isAct=G.highlightOn&&G.selId&&(rel.fr===G.selId||rel.to===G.selId);
+    const isDim=G.highlightOn&&G.selId&&!isAct;
+    drawRelation(rel,rl,isAct,isDim);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   DRAG — ENTITIES
+   FIX BUG 5: throttle savePositions (not on every mousemove)
+══════════════════════════════════════════════════════════ */
+let dragEnt={active:false,id:null,ox:0,oy:0,sx:0,sy:0};
+let saveTimer=null;
+
+function startDragEnt(e,id){
+  e.stopPropagation(); e.preventDefault();
+  dragEnt.active=true; dragEnt.id=id;
+  dragEnt.ox=ENTS[id].x; dragEnt.oy=ENTS[id].y;
+  const r=canvasRect();
+  dragEnt.sx=(e.clientX-r.left-G.panX)/G.zoom;
+  dragEnt.sy=(e.clientY-r.top -G.panY)/G.zoom;
+  document.body.style.cursor="grabbing";
+}
+function handleDragEnt(e){
+  if(!dragEnt.active) return;
+  const r=canvasRect();
+  const wx=(e.clientX-r.left-G.panX)/G.zoom;
+  const wy=(e.clientY-r.top -G.panY)/G.zoom;
+  ENTS[dragEnt.id].x=dragEnt.ox+wx-dragEnt.sx;
+  ENTS[dragEnt.id].y=dragEnt.oy+wy-dragEnt.sy;
+  updateDraggedEntity(dragEnt.id); // FIX BUG 1: incremental, not full rebuild
+  // FIX BUG 5: debounce save
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(savePositions, 400);
+}
+function endDragEnt(){
+  if(!dragEnt.active) return;
+  dragEnt.active=false;
+  document.body.style.cursor="";
+  savePositions();
+}
+
+/* ══════════════════════════════════════════════════════════
+   PAN
+══════════════════════════════════════════════════════════ */
+let pan={active:false,sx:0,sy:0,ox:0,oy:0};
+function startPan(e){
+  if(e.target.closest(".ent-g")) return;
+  pan.active=true; pan.sx=e.clientX; pan.sy=e.clientY;
+  pan.ox=G.panX; pan.oy=G.panY;
+  document.getElementById("canvas-area").classList.add("panning");
+}
+function handlePan(e){
+  if(!pan.active) return;
+  G.panX=pan.ox+(e.clientX-pan.sx);
+  G.panY=pan.oy+(e.clientY-pan.sy);
+  applyTransform();
+}
+function endPan(){ pan.active=false; document.getElementById("canvas-area").classList.remove("panning"); }
+
+/* ══════════════════════════════════════════════════════════
+   ZOOM
+══════════════════════════════════════════════════════════ */
+function handleWheel(e){
+  e.preventDefault();
+  const f=e.deltaY<0?1.1:0.91;
+  const r=canvasRect();
+  const ox=e.clientX-r.left, oy=e.clientY-r.top;
+  const wx=(ox-G.panX)/G.zoom, wy=(oy-G.panY)/G.zoom;
+  G.zoom=Math.min(Math.max(0.08,G.zoom*f),2.5);
+  G.panX=ox-wx*G.zoom; G.panY=oy-wy*G.zoom;
+  applyTransform();
+}
+function zoomIn(){ zoomBy(1.2); }
+function zoomOut(){ zoomBy(0.83); }
+function zoomBy(f){
+  const r=canvasRect();
+  const ox=r.width/2, oy=r.height/2;
+  const wx=(ox-G.panX)/G.zoom, wy=(oy-G.panY)/G.zoom;
+  G.zoom=Math.min(Math.max(0.08,G.zoom*f),2.5);
+  G.panX=ox-wx*G.zoom; G.panY=oy-wy*G.zoom;
+  applyTransform();
+}
+function fitAll(){
+  let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
+  for(const e of Object.values(ENTS)){
+    x1=Math.min(x1,e.x); y1=Math.min(y1,e.y);
+    x2=Math.max(x2,e.x+e.w); y2=Math.max(y2,e.y+e.h);
+  }
+  const r=canvasRect(), pad=100;
+  const sx=(r.width-pad*2)/(x2-x1), sy=(r.height-pad*2)/(y2-y1);
+  G.zoom=Math.min(sx,sy,0.65);
+  G.panX=(r.width-(x2-x1)*G.zoom)/2-x1*G.zoom;
+  G.panY=(r.height-(y2-y1)*G.zoom)/2-y1*G.zoom;
+  applyTransform();
+}
+function applyTransform(){
+  document.getElementById("svg-root").style.transform=
+    `translate(${G.panX}px,${G.panY}px) scale(${G.zoom})`;
+  document.getElementById("zoom-display").textContent=Math.round(G.zoom*100)+"%";
+}
+let _cr=null;
+function canvasRect(){ if(!_cr) _cr=document.getElementById("canvas-area").getBoundingClientRect(); return _cr; }
+window.addEventListener("resize",()=>{ _cr=null; fitAll(); });
+
+/* ══════════════════════════════════════════════════════════
+   SELECTION
+══════════════════════════════════════════════════════════ */
+function selectEnt(id){
+  G.selId=id; G.focusMode=false;
+  renderAll();
+  // Sidebar highlight
+  document.querySelectorAll(".sb-item").forEach(el=>el.classList.toggle("sel",el.dataset.id===id));
+  // Info panel
+  const e=ENTS[id];
+  document.getElementById("ip-dot").style.background=e.color;
+  document.getElementById("ip-name").textContent=id;
+  document.getElementById("ip-mod").textContent=e.module;
+  document.getElementById("ip-cnt").textContent=relCount[id]||0;
+  document.getElementById("ip-nattr").textContent=e.attrs.length;
+  // Attr table
+  document.getElementById("ip-tbody").innerHTML=e.attrs.map(a=>`
+    <tr>
+      <td>${a.pk?'<span class="kpk">PK</span>':a.fk?'<span class="kfk">FK</span>':''}</td>
+      <td style="font-family:'IBM Plex Mono';font-size:10px">${a.n}</td>
+      <td style="color:var(--muted);font-family:'IBM Plex Mono';font-size:9px">${a.t||''}</td>
+    </tr>`).join('');
+  // Related pills
+  const rel=new Set();
+  RELATIONS.forEach(r=>{ if(r.fr===id) rel.add(r.to); if(r.to===id) rel.add(r.fr); });
+  document.getElementById("ip-pills").innerHTML=[...rel].map(n=>
+    `<span class="ip-pill" onclick="selectEnt('${n}')">${n}</span>`).join('');
+  document.getElementById("info-panel").classList.add("open");
+}
+function clearSel(){
+  G.selId=null; G.focusMode=false;
+  document.getElementById("info-panel").classList.remove("open");
+  document.querySelectorAll(".sb-item").forEach(el=>el.classList.remove("sel"));
+  renderAll();
+}
+function enterFocus(id){
+  G.focusMode=true; G.focusId=id; G.selId=id;
+  document.getElementById("focus-exit").classList.add("vis");
+  selectEnt(id); renderAll();
+}
+function exitFocus(){
+  G.focusMode=false; G.focusId=null;
+  document.getElementById("focus-exit").classList.remove("vis");
+  renderAll();
+}
+function toggleHighlight(){
+  G.highlightOn=!G.highlightOn;
+  document.getElementById("btn-hi").classList.toggle("on",G.highlightOn);
+  renderAll();
+}
+
+/* ══════════════════════════════════════════════════════════
+   SIDEBAR
+   FIX BUG 11: filterSidebar uses data-id safely
+══════════════════════════════════════════════════════════ */
+function buildSidebar(){
+  const mods={};
+  for(const [id,e] of Object.entries(ENTS)){
+    if(!mods[e.module]) mods[e.module]=[];
+    mods[e.module].push(id);
+  }
+  let html="";
+  for(const [mn,ids] of Object.entries(mods)){
+    const col=ENTS[ids[0]].color;
+    const ic=MOD_ICONS[mn]||"📁";
+    html+=`<div class="sb-mod" style="background:${col}18;color:${col}">${ic} ${mn}</div>`;
+    ids.forEach(id=>{
+      const cnt=relCount[id]||0;
+      html+=`<div class="sb-item" data-id="${id}"
+        onclick="selectEnt('${id}');focusOn('${id}')"
+        title="${id} — ${cnt} relaciones"
+        >${id}<span class="rc">${cnt}</span></div>`;
+    });
+  }
+  document.getElementById("sb-list").innerHTML=html;
+  document.getElementById("st-ents").textContent=Object.keys(ENTS).length;
+  document.getElementById("st-rels").textContent=RELATIONS.length;
+}
+function filterSidebar(q){
+  const v=(q||"").toLowerCase();
+  // FIX BUG 11: only target .sb-item elements (which have data-id)
+  document.querySelectorAll(".sb-item[data-id]").forEach(el=>{
+    el.style.display=el.dataset.id.toLowerCase().includes(v)?"":"none";
+  });
+}
+function focusOn(id){
+  const e=ENTS[id], r=canvasRect();
+  const cx=e.x+e.w/2, cy=e.y+e.h/2;
+  G.panX=r.width/2-cx*G.zoom;
+  G.panY=r.height/2-cy*G.zoom;
+  applyTransform();
+}
+
+/* ══════════════════════════════════════════════════════════
+   PERSISTENCE
+   FIX BUG 13: reset also clears saved state
+══════════════════════════════════════════════════════════ */
+function savePositions(){
+  try{
+    const pos={};
+    for(const id in ENTS) pos[id]={x:ENTS[id].x,y:ENTS[id].y};
+    localStorage.setItem("der2_pos",JSON.stringify(pos));
+  }catch(e){}
+}
+function loadPositions(){
+  try{
+    const p=localStorage.getItem("der2_pos");
+    if(p){ const d=JSON.parse(p); for(const id in d) if(ENTS[id]){ENTS[id].x=d[id].x;ENTS[id].y=d[id].y;} }
+  }catch(e){}
+}
+function resetPositions(){
+  for(const id in ENTS){ ENTS[id].x=DEFAULT_POS[id].x; ENTS[id].y=DEFAULT_POS[id].y; }
+  try{localStorage.removeItem("der2_pos");}catch(e){} // FIX BUG 13
+  renderAll();
+  setTimeout(fitAll,40);
+}
+
+/* ══════════════════════════════════════════════════════════
+   THEME
+══════════════════════════════════════════════════════════ */
+function toggleTheme(){
+  const html=document.documentElement;
+  const t=html.getAttribute("data-theme")==="dark"?"light":"dark";
+  html.setAttribute("data-theme",t);
+  try{localStorage.setItem("der2_theme",t);}catch(e){}
+  renderAll();
+}
+
+/* ══════════════════════════════════════════════════════════
+   EXPORT SVG
+   FIX BUG 12: no duplicate xmlns
+══════════════════════════════════════════════════════════ */
+function exportSVG(){
+  let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
+  for(const e of Object.values(ENTS)){
+    x1=Math.min(x1,e.x-50); y1=Math.min(y1,e.y-50);
+    x2=Math.max(x2,e.x+e.w+50); y2=Math.max(y2,e.y+e.h+50);
+  }
+  const root=document.getElementById("svg-root");
+  const clone=root.cloneNode(true);
+  // FIX BUG 12: createElementNS already sets xmlns; don't duplicate
+  clone.setAttribute("viewBox",`${x1} ${y1} ${x2-x1} ${y2-y1}`);
+  clone.setAttribute("width",x2-x1);
+  clone.setAttribute("height",y2-y1);
+  clone.style.transform="";
+  // Inline all styles
+  const styles=Array.from(document.styleSheets).flatMap(s=>{
+    try{return Array.from(s.cssRules||[]).map(r=>r.cssText);}catch(e){return[];}
+  }).join("\n");
+  const styleEl=document.createElementNS(NS,"style");
+  styleEl.textContent=styles;
+  clone.insertBefore(styleEl,clone.firstChild);
+  const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:"image/svg+xml"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="intersoft_der_v2.svg";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ══════════════════════════════════════════════════════════
+   EVENTS SETUP
+══════════════════════════════════════════════════════════ */
+function setupEvents(){
+  const ca=document.getElementById("canvas-area");
+  ca.addEventListener("mousedown",startPan);
+  ca.addEventListener("wheel",handleWheel,{passive:false});
+  ca.addEventListener("click",e=>{
+    if(e.target===ca||e.target===document.getElementById("svg-root")) clearSel();
+  });
+  document.addEventListener("mousemove",e=>{ handleDragEnt(e); handlePan(e); });
+  document.addEventListener("mouseup",()=>{ endDragEnt(); endPan(); });
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape"){ if(G.focusMode) exitFocus(); else clearSel(); }
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════ */
+function init(){
+  // Deep-copy entities
+  ENTS={};
+  for(const [id,e] of Object.entries(ENTITIES_DEF)){
+    ENTS[id]={...e, attrs:[...e.attrs], w:TW};
+  }
+  // Relation counts
+  for(const id in ENTS) relCount[id]=0;
+  RELATIONS.forEach(r=>{ relCount[r.fr]++; relCount[r.to]++; });
+
+  // Restore theme + positions
+  try{ const t=localStorage.getItem("der2_theme"); if(t) document.documentElement.setAttribute("data-theme",t); }catch(e){}
+  loadPositions();
+
+  // FIX BUG 14: transition is set in CSS correctly (transition:transform .28s)
+  buildSidebar();
+  setupEvents();
+  document.getElementById("btn-hi").classList.add("on");
+  renderAll();
+  setTimeout(fitAll,80);
+}
+init();
+</script>
+</body>
+</html>

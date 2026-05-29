@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Intersoft · MER Profesional v5</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══ TOKENS ══════════════════════════════════════════════════════ */
+:root {
+  --bg:#eef2f7; --surface:#ffffff; --surface2:#f4f7fb; --border:#d1dae7;
+  --txt:#0f172a; --muted:#64748b; --accent:#2563eb; --accent-soft:rgba(37,99,235,.1);
+  --ent-fill:#ffffff; --ent-stroke:#2563eb;
+  --dia-fill:#fffbeb; --dia-stroke:#d97706;
+  --attr-fill:#eff6ff; --attr-stroke:#3b82f6;
+  --line:#94a3b8; --line-active:#2563eb;
+  --shadow:0 4px 14px rgba(0,0,0,.08); --shadow-lg:0 12px 32px rgba(0,0,0,.12);
+  --mod-tenant:rgba(249,115,22,.09); --mod-auth:rgba(59,130,246,.09);
+  --mod-sales:rgba(239,68,68,.09); --mod-inv:rgba(34,197,94,.09);
+  --mod-ia:rgba(168,85,247,.09); --mod-log:rgba(245,158,11,.09);
+  --mod-cam:rgba(100,116,139,.09); --mod-rep:rgba(234,179,8,.09);
+  --card-bg:#ffffff;
+}
+[data-theme="dark"] {
+  --bg:#0c1221; --surface:#151f30; --surface2:#1c2a3e; --border:#243348;
+  --txt:#e2e8f0; --muted:#6b7d99; --accent:#60a5fa; --accent-soft:rgba(96,165,250,.12);
+  --ent-fill:#1a2840; --ent-stroke:#60a5fa;
+  --dia-fill:#261d0a; --dia-stroke:#f59e0b;
+  --attr-fill:#0f2340; --attr-stroke:#60a5fa;
+  --line:#3d5070; --line-active:#60a5fa;
+  --mod-tenant:rgba(249,115,22,.14); --mod-auth:rgba(59,130,246,.14);
+  --mod-sales:rgba(239,68,68,.14); --mod-inv:rgba(34,197,94,.14);
+  --mod-ia:rgba(168,85,247,.14); --mod-log:rgba(245,158,11,.14);
+  --mod-cam:rgba(100,116,139,.14); --mod-rep:rgba(234,179,8,.14);
+  --card-bg:#1c2a3e;
+}
+/* ═══ RESET ═══════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+html,body{height:100%;overflow:hidden;font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);color:var(--txt);transition:background .25s,color .25s}
+
+/* ═══ LAYOUT ══════════════════════════════════════════════════════ */
+body{display:flex;flex-direction:column}
+#topbar{flex:none;height:56px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:10px;z-index:30;
+  box-shadow:var(--shadow)}
+#workspace{flex:1;display:flex;overflow:hidden}
+#sidebar{width:270px;flex:none;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;z-index:10;overflow:hidden}
+#canvas-area{flex:1;position:relative;overflow:hidden;cursor:grab;
+  background:var(--bg)}
+#canvas-area.panning{cursor:grabbing}
+/* subtle grid */
+#canvas-area::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(circle,var(--border) 1px,transparent 1px);
+  background-size:32px 32px;opacity:.45}
+
+/* ═══ TOPBAR ══════════════════════════════════════════════════════ */
+.brand{display:flex;align-items:center;gap:10px;margin-right:8px}
+.brand-logo{width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#2563eb,#7c3aed);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;color:#fff;font-size:15px;flex:none}
+.brand-name{font-weight:700;font-size:14px;white-space:nowrap}
+.brand-sub{font-size:10px;color:var(--muted);font-family:'JetBrains Mono';
+  text-transform:uppercase;letter-spacing:.07em}
+.sep{width:1px;height:24px;background:var(--border);margin:0 4px}
+.tbtn{display:flex;align-items:center;gap:5px;padding:6px 12px;border:1px solid var(--border);
+  border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;
+  font-size:12px;font-family:'Inter';transition:.15s;white-space:nowrap}
+.tbtn:hover{border-color:var(--accent);color:var(--txt);background:var(--accent-soft)}
+.tbtn svg{width:14px;height:14px;flex:none}
+.tbtn.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+#zoom-display{font-family:'JetBrains Mono';font-size:11px;color:var(--muted);
+  min-width:44px;text-align:center}
+.tbtn-danger{border-color:rgba(239,68,68,.3);color:#ef4444}
+.tbtn-danger:hover{background:rgba(239,68,68,.08);border-color:#ef4444}
+
+/* ═══ SIDEBAR ═════════════════════════════════════════════════════ */
+.sb-head{padding:16px 18px 12px;border-bottom:1px solid var(--border)}
+.sb-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);font-family:'JetBrains Mono';margin-bottom:8px}
+.sb-search{width:100%;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:7px;color:var(--txt);font-size:12px;font-family:'Inter';outline:none;transition:.15s}
+.sb-search:focus{border-color:var(--accent);background:var(--surface)}
+.sb-list{flex:1;overflow-y:auto;padding:10px}
+.sb-list::-webkit-scrollbar{width:4px}
+.sb-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sb-mod-head{display:flex;align-items:center;gap:6px;padding:6px 8px;
+  border-radius:6px;margin:6px 0 2px;font-size:11px;font-weight:700}
+.sb-item{display:flex;align-items:center;justify-content:space-between;
+  padding:5px 10px;margin:1px 0;border-radius:6px;cursor:pointer;font-size:11px;
+  font-family:'JetBrains Mono';color:var(--muted);border-left:2px solid transparent;transition:.12s}
+.sb-item:hover{background:var(--surface2);color:var(--txt);border-left-color:var(--accent)}
+.sb-item.sel{background:var(--accent-soft);color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.sb-item .cnt{font-size:9px;padding:1px 5px;border-radius:8px;
+  background:var(--surface);border:1px solid var(--border)}
+.sb-item .cnt.hi{background:rgba(34,197,94,.15);color:#16a34a;border-color:rgba(34,197,94,.3)}
+.sb-stats{padding:10px 18px;border-top:1px solid var(--border);
+  display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sb-stat{background:var(--surface2);border-radius:6px;padding:6px 10px}
+.sb-stat-v{font-size:16px;font-weight:800;color:var(--accent);font-family:'JetBrains Mono'}
+.sb-stat-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+/* ═══ SVG CANVAS ══════════════════════════════════════════════════ */
+#svg-root{position:absolute;top:0;left:0;overflow:visible;transform-origin:0 0;will-change:transform}
+
+/* SVG element styles */
+.module-rect{pointer-events:none}
+.module-lbl{pointer-events:none;font-family:'Inter';font-size:13px;font-weight:700;
+  font-style:italic;opacity:.7}
+.ent-rect{fill:var(--ent-fill);stroke:var(--ent-stroke);stroke-width:2;rx:10;
+  filter:drop-shadow(0 3px 8px rgba(0,0,0,.1));transition:filter .15s,stroke-width .15s}
+.ent-g:hover .ent-rect{filter:drop-shadow(0 6px 16px rgba(0,0,0,.18));stroke-width:2.5}
+.ent-g.selected .ent-rect{stroke-width:3;filter:drop-shadow(0 0 0 3px rgba(37,99,235,.25))}
+.ent-g.dimmed{opacity:.2}
+.ent-text{font-family:'Inter';font-size:13px;font-weight:700;text-anchor:middle;dominant-baseline:middle;
+  pointer-events:none}
+.ent-mod-text{font-family:'JetBrains Mono';font-size:8.5px;text-anchor:middle;dominant-baseline:middle;
+  opacity:.55;pointer-events:none}
+.rel-path{stroke:var(--line);stroke-width:2;fill:none;stroke-linecap:round}
+.rel-path.dimmed{opacity:.08}
+.rel-path.active{stroke:var(--line-active);stroke-width:2.5;
+  filter:drop-shadow(0 0 3px rgba(37,99,235,.4))}
+.dia-poly{fill:var(--dia-fill);stroke:var(--dia-stroke);stroke-width:2}
+.dia-poly.dimmed{opacity:.08}
+.dia-poly.active{stroke:var(--line-active);stroke-width:2.5}
+.dia-text{font-family:'Inter';font-size:10px;font-weight:600;
+  text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+.dia-text.dimmed{opacity:.08}
+.dia-text.active{fill:var(--line-active)}
+.card-text{font-family:'JetBrains Mono';font-size:10px;font-weight:700;
+  text-anchor:middle;paint-order:stroke;stroke-width:3;
+  stroke:var(--bg);pointer-events:none}
+.card-text.dimmed{opacity:.08}
+.card-text.active{fill:var(--line-active)}
+.attr-circ{fill:var(--attr-fill);stroke:var(--attr-stroke);stroke-width:1.5;cursor:grab}
+.attr-circ:active{cursor:grabbing}
+.attr-circ.dimmed{opacity:.1}
+.attr-text{font-family:'JetBrains Mono';font-size:9.5px;text-anchor:middle;
+  dominant-baseline:middle;pointer-events:none}
+.attr-text.dimmed{opacity:.1}
+.attr-line{stroke:var(--line);stroke-width:1;stroke-dasharray:4 3;
+  pointer-events:none;opacity:.6}
+.attr-line.dimmed{opacity:.05}
+.attr-circ.pk{fill:rgba(251,191,36,.25);stroke:#d97706}
+.attr-circ.fk{fill:rgba(34,197,94,.2);stroke:#16a34a}
+
+/* ═══ INFO PANEL ══════════════════════════════════════════════════ */
+#info-panel{position:absolute;top:16px;right:16px;width:340px;
+  background:var(--card-bg);border:1px solid var(--border);border-radius:14px;
+  box-shadow:var(--shadow-lg);z-index:20;overflow:hidden;
+  transform:translateX(110%);transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  max-height:calc(100vh - 100px);display:flex;flex-direction:column}
+#info-panel.open{transform:translateX(0)}
+.ip-head{padding:14px 16px;border-bottom:1px solid var(--border);
+  background:var(--surface2);display:flex;align-items:center;gap:10px}
+.ip-icon{font-size:22px}
+.ip-name{font-family:'JetBrains Mono';font-size:14px;font-weight:700;color:var(--accent)}
+.ip-mod{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;
+  font-family:'JetBrains Mono'}
+.ip-close{margin-left:auto;background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:20px;padding:2px 6px;border-radius:4px;transition:.12s}
+.ip-close:hover{background:var(--surface);color:var(--txt)}
+.ip-body{padding:14px 16px;overflow-y:auto;flex:1}
+.ip-body::-webkit-scrollbar{width:4px}
+.ip-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.ip-row{display:flex;justify-content:space-between;font-size:11px;
+  margin-bottom:5px;font-family:'JetBrains Mono'}
+.ip-label{color:var(--muted)}
+.ip-val{color:var(--txt);font-weight:600}
+.ip-section{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);margin:12px 0 6px;font-family:'JetBrains Mono'}
+.attr-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono';font-size:10.5px}
+.attr-table th{text-align:left;color:var(--muted);font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;padding:3px 6px;
+  border-bottom:1px solid var(--border)}
+.attr-table td{padding:4px 6px;border-bottom:1px dashed var(--border)}
+.kbadge{display:inline-block;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:700}
+.kbadge.pk{background:#fef3c7;color:#b45309}
+.kbadge.fk{background:#dcfce7;color:#166534}
+.ip-pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.ip-pill{font-family:'JetBrains Mono';font-size:9.5px;padding:3px 8px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+  color:var(--accent);cursor:pointer;transition:.12s}
+.ip-pill:hover{border-color:var(--accent);background:var(--accent-soft)}
+
+/* ═══ FOCUS EXIT ══════════════════════════════════════════════════ */
+#focus-exit{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--accent);color:#fff;border:none;padding:9px 24px;border-radius:40px;
+  font-weight:600;cursor:pointer;z-index:25;box-shadow:var(--shadow-lg);
+  display:none;font-size:13px;font-family:'Inter';transition:.15s}
+#focus-exit.vis{display:block}
+#focus-exit:hover{filter:brightness(1.1);transform:translateX(-50%) translateY(-1px)}
+
+/* ═══ VAL PANEL ═══════════════════════════════════════════════════ */
+#val-panel{position:absolute;bottom:16px;right:16px;width:260px;
+  background:var(--card-bg);border:1px solid var(--border);border-radius:12px;
+  box-shadow:var(--shadow);z-index:18;overflow:hidden;transition:.3s}
+#val-panel.collapsed{transform:translateY(calc(100% - 38px))}
+.vp-head{padding:9px 14px;background:var(--surface2);border-bottom:1px solid var(--border);
+  cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.vp-title{font-family:'JetBrains Mono';font-size:11px;font-weight:700;color:var(--accent)}
+.vp-summary{font-size:10px;color:var(--muted)}
+.vp-body{padding:8px 10px;max-height:260px;overflow-y:auto}
+.vp-body::-webkit-scrollbar{width:4px}
+.vp-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.vp-row{display:flex;justify-content:space-between;align-items:center;
+  padding:3px 4px;font-family:'JetBrains Mono';font-size:10px;border-radius:4px;
+  cursor:pointer;transition:.12s}
+.vp-row:hover{background:var(--surface2)}
+.vp-badge{padding:1px 7px;border-radius:8px;font-weight:700;font-size:9px}
+.vp-ok .vp-badge{background:rgba(34,197,94,.15);color:#16a34a}
+.vp-warn .vp-badge{background:rgba(245,158,11,.15);color:#d97706}
+</style>
+</head>
+<body>
+
+<!-- ── TOPBAR ─────────────────────────────────────────────── -->
+<div id="topbar">
+  <div class="brand">
+    <div class="brand-logo">I</div>
+    <div>
+      <div class="brand-name">Intersoft MER</div>
+      <div class="brand-sub">Diagrama Entidad‑Relación</div>
+    </div>
+  </div>
+  <div class="sep"></div>
+  <button class="tbtn" onclick="zoomIn()" title="Zoom +">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+  <span id="zoom-display">19%</span>
+  <button class="tbtn" onclick="zoomOut()" title="Zoom -">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+  </button>
+  <button class="tbtn" onclick="fitAll()" title="Ajustar vista">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    Fit
+  </button>
+  <div class="sep"></div>
+  <button class="tbtn" id="btn-attrs" onclick="toggleAttrs()" title="Atributos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="4" r="2"/><circle cx="12" cy="20" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="20" cy="12" r="2"/></svg>
+    Atributos
+  </button>
+  <button class="tbtn" id="btn-mods" onclick="toggleMods()" title="Módulos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Módulos
+  </button>
+  <div class="sep"></div>
+  <button class="tbtn" onclick="toggleTheme()" title="Tema">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  </button>
+  <button class="tbtn" onclick="exportSVG()" title="Exportar SVG">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    SVG
+  </button>
+  <button class="tbtn tbtn-danger" onclick="resetPositions()" title="Reset posiciones">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5"/></svg>
+    Reset
+  </button>
+  <button class="tbtn" onclick="clearSelection()" title="Limpiar selección" style="margin-left:auto">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+  </button>
+</div>
+
+<!-- ── WORKSPACE ──────────────────────────────────────────── -->
+<div id="workspace">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-head">
+      <div class="sb-title">Entidades</div>
+      <input class="sb-search" id="sb-search" placeholder="Buscar…" oninput="filterSidebar(this.value)">
+    </div>
+    <div class="sb-list" id="sb-list"></div>
+    <div class="sb-stats">
+      <div class="sb-stat"><div class="sb-stat-v" id="st-ents">0</div><div class="sb-stat-l">Entidades</div></div>
+      <div class="sb-stat"><div class="sb-stat-v" id="st-rels">0</div><div class="sb-stat-l">Relaciones</div></div>
+    </div>
+  </div>
+
+  <!-- CANVAS AREA -->
+  <div id="canvas-area">
+    <svg id="svg-root" xmlns="http://www.w3.org/2000/svg">
+      <g id="g-modules"></g>
+      <g id="g-rels"></g>
+      <g id="g-attrs"></g>
+      <g id="g-ents"></g>
+    </svg>
+
+    <!-- INFO PANEL -->
+    <div id="info-panel">
+      <div class="ip-head">
+        <span class="ip-icon" id="ip-icon">📦</span>
+        <div><div class="ip-name" id="ip-name">ENTIDAD</div><div class="ip-mod" id="ip-mod">Módulo</div></div>
+        <button class="ip-close" onclick="clearSelection()">×</button>
+      </div>
+      <div class="ip-body">
+        <div class="ip-row"><span class="ip-label">Relaciones</span><span class="ip-val" id="ip-cnt">0</span></div>
+        <div class="ip-row"><span class="ip-label">Atributos</span><span class="ip-val" id="ip-nattrs">0</span></div>
+        <div class="ip-section">Atributos (3NF)</div>
+        <table class="attr-table"><thead><tr><th>Key</th><th>Campo</th><th>Tipo</th></tr></thead><tbody id="ip-tbody"></tbody></table>
+        <div class="ip-section">Relacionada con</div>
+        <div class="ip-pills" id="ip-pills"></div>
+      </div>
+    </div>
+
+    <!-- VALIDATION PANEL -->
+    <div id="val-panel" class="collapsed">
+      <div class="vp-head" onclick="toggleValPanel()">
+        <span class="vp-title">⚖️ Validación relaciones</span>
+        <span class="vp-summary" id="vp-sum"></span>
+      </div>
+      <div class="vp-body" id="vp-body"></div>
+    </div>
+
+    <button id="focus-exit" onclick="exitFocus()">🔍 Salir del enfoque</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   DATA — ENTITIES + ATTRIBUTES
+═══════════════════════════════════════════════════════════ */
+const ENT_ICONS = {
+  "Tenant":"🏢","Auth":"🔐","Sales":"💰","Inventory":"📦",
+  "IA":"🤖","Reports":"📊","Logs":"📝","Cameras":"📹"
+};
+const ENT_COLORS = {
+  "Tenant":"#f97316","Auth":"#3b82f6","Sales":"#ef4444","Inventory":"#22c55e",
+  "IA":"#a855f7","Reports":"#eab308","Logs":"#f59e0b","Cameras":"#64748b"
+};
+const MOD_VARS = {
+  "Tenant":"var(--mod-tenant)","Auth":"var(--mod-auth)","Sales":"var(--mod-sales)",
+  "Inventory":"var(--mod-inv)","IA":"var(--mod-ia)","Reports":"var(--mod-rep)",
+  "Logs":"var(--mod-log)","Cameras":"var(--mod-cam)"
+};
+
+/* --- Default positions — optimized layout to reduce edge crossings --- */
+const DEFAULT_ENTITIES = {
+  // ── Tenant ──────────────────────────────────────
+  "EMPRESA":      { x:2200, y:1600, w:220, h:90, module:"Tenant",
+    attrs:[{n:"id_empresa",t:"UUID",pk:true},{n:"nombre",t:"VARCHAR"},{n:"nit",t:"VARCHAR"},{n:"plan",t:"ENUM"},{n:"estado",t:"BOOLEAN"}]},
+  "SUSCRIPCION":  { x:1400, y:1000, w:220, h:90, module:"Tenant",
+    attrs:[{n:"id_suscripcion",t:"UUID",pk:true},{n:"plan",t:"ENUM"},{n:"monto",t:"DECIMAL"},{n:"fecha_inicio",t:"DATE"},{n:"fk_empresa",t:"UUID",fk:true}]},
+  "CONFIG":       { x:2200, y:1000, w:210, h:90, module:"Tenant",
+    attrs:[{n:"id_config",t:"UUID",pk:true},{n:"clave",t:"VARCHAR"},{n:"valor",t:"JSONB"},{n:"fk_empresa",t:"UUID",fk:true}]},
+  // ── Auth ────────────────────────────────────────
+  "USUARIO":      { x:3000, y:1600, w:220, h:90, module:"Auth",
+    attrs:[{n:"id_usuario",t:"UUID",pk:true},{n:"email",t:"VARCHAR"},{n:"hash",t:"VARCHAR"},{n:"nombre",t:"VARCHAR"},{n:"fk_empresa",t:"UUID",fk:true},{n:"fk_rol",t:"UUID",fk:true}]},
+  "ROL":          { x:3800, y:1000, w:200, h:90, module:"Auth",
+    attrs:[{n:"id_rol",t:"UUID",pk:true},{n:"nombre",t:"VARCHAR"},{n:"descripcion",t:"TEXT"}]},
+  "PERMISO":      { x:4600, y:1600, w:210, h:90, module:"Auth",
+    attrs:[{n:"id_permiso",t:"UUID",pk:true},{n:"recurso",t:"VARCHAR"},{n:"accion",t:"VARCHAR"}]},
+  "ROL_PERMISO":  { x:4200, y:2400, w:220, h:90, module:"Auth",
+    attrs:[{n:"fk_rol",t:"UUID",fk:true},{n:"fk_permiso",t:"UUID",fk:true},{n:"asignado_el",t:"TIMESTAMP"}]},
+  // ── Sales ───────────────────────────────────────
+  "VENTA":        { x:3000, y:2800, w:210, h:90, module:"Sales",
+    attrs:[{n:"id_venta",t:"UUID",pk:true},{n:"fecha",t:"TIMESTAMP"},{n:"total",t:"DECIMAL"},{n:"fk_usuario",t:"UUID",fk:true},{n:"fk_metodo_pago",t:"UUID",fk:true}]},
+  "METODO_PAGO":  { x:3800, y:2800, w:220, h:90, module:"Sales",
+    attrs:[{n:"id_metodo",t:"UUID",pk:true},{n:"tipo",t:"VARCHAR"},{n:"activo",t:"BOOLEAN"}]},
+  "DETALLE_VENTA":{ x:2600, y:3700, w:240, h:90, module:"Sales",
+    attrs:[{n:"id_det",t:"UUID",pk:true},{n:"cantidad",t:"INT"},{n:"precio_unit",t:"DECIMAL"},{n:"fk_venta",t:"UUID",fk:true},{n:"fk_producto",t:"UUID",fk:true}]},
+  // ── Inventory ───────────────────────────────────
+  "PRODUCTO":     { x:3800, y:3700, w:210, h:90, module:"Inventory",
+    attrs:[{n:"id_producto",t:"UUID",pk:true},{n:"nombre",t:"VARCHAR"},{n:"precio",t:"DECIMAL"},{n:"stock",t:"INT"},{n:"fk_categoria",t:"UUID",fk:true}]},
+  "CATEGORIA":    { x:4700, y:3700, w:210, h:90, module:"Inventory",
+    attrs:[{n:"id_categoria",t:"UUID",pk:true},{n:"nombre",t:"VARCHAR"},{n:"descripcion",t:"TEXT"}]},
+  "MOVIMIENTO_INV":{ x:3800, y:4600, w:240, h:90, module:"Inventory",
+    attrs:[{n:"id_mov",t:"UUID",pk:true},{n:"tipo",t:"ENUM"},{n:"cantidad",t:"INT"},{n:"fecha",t:"TIMESTAMP"},{n:"fk_producto",t:"UUID",fk:true}]},
+  // ── Reports ─────────────────────────────────────
+  "REPORTE":      { x:800,  y:1600, w:210, h:90, module:"Reports",
+    attrs:[{n:"id_reporte",t:"UUID",pk:true},{n:"titulo",t:"VARCHAR"},{n:"fecha",t:"TIMESTAMP"},{n:"fk_rol",t:"UUID",fk:true}]},
+  "DASHBOARD":    { x:200,  y:2400, w:220, h:90, module:"Reports",
+    attrs:[{n:"id_dash",t:"UUID",pk:true},{n:"layout",t:"JSONB"},{n:"fk_reporte",t:"UUID",fk:true}]},
+  // ── Logs ────────────────────────────────────────
+  "LOG_AUDITORIA":{ x:4200, y:3200, w:240, h:90, module:"Logs",
+    attrs:[{n:"id_log",t:"UUID",pk:true},{n:"accion",t:"VARCHAR"},{n:"tabla",t:"VARCHAR"},{n:"fecha",t:"TIMESTAMP"},{n:"fk_rol_permiso",t:"UUID",fk:true}]},
+  // ── Cameras ─────────────────────────────────────
+  "CAMARA":       { x:5400, y:2200, w:200, h:90, module:"Cameras",
+    attrs:[{n:"id_camara",t:"UUID",pk:true},{n:"ubicacion",t:"VARCHAR"},{n:"url_stream",t:"VARCHAR"}]},
+  "GRABACION":    { x:6200, y:2000, w:210, h:90, module:"Cameras",
+    attrs:[{n:"id_grab",t:"UUID",pk:true},{n:"url",t:"VARCHAR"},{n:"duracion_s",t:"INT"},{n:"fk_camara",t:"UUID",fk:true}]},
+  "ALERTA_CAMARA":{ x:6200, y:2600, w:240, h:90, module:"Cameras",
+    attrs:[{n:"id_alerta",t:"UUID",pk:true},{n:"mensaje",t:"TEXT"},{n:"tipo",t:"ENUM"},{n:"fk_camara",t:"UUID",fk:true}]},
+  // ── IA ──────────────────────────────────────────
+  "IA_CONVERSACION":{ x:800, y:800, w:240, h:90, module:"IA",
+    attrs:[{n:"id_conv",t:"UUID",pk:true},{n:"titulo",t:"VARCHAR"},{n:"modelo",t:"VARCHAR"},{n:"fk_usuario",t:"UUID",fk:true}]},
+  "IA_MENSAJE":   { x:200,  y:800, w:220, h:90, module:"IA",
+    attrs:[{n:"id_msg",t:"UUID",pk:true},{n:"rol",t:"ENUM"},{n:"contenido",t:"TEXT"},{n:"tokens",t:"INT"},{n:"fk_conv",t:"UUID",fk:true}]},
+};
+
+const DEFAULT_POSITIONS = {};
+for (const k in DEFAULT_ENTITIES) DEFAULT_POSITIONS[k] = { x:DEFAULT_ENTITIES[k].x, y:DEFAULT_ENTITIES[k].y };
+
+const RELATIONS = [
+  {fr:"EMPRESA",     to:"SUSCRIPCION",     cf:"(1,1)",ct:"(0,1)",  lb:"contrata"},
+  {fr:"EMPRESA",     to:"CONFIG",          cf:"(1,1)",ct:"(0,n)",  lb:"define"},
+  {fr:"EMPRESA",     to:"USUARIO",         cf:"(1,1)",ct:"(1,n)",  lb:"emplea"},
+  {fr:"USUARIO",     to:"ROL",             cf:"(n,1)",ct:"(1,n)",  lb:"tiene"},
+  {fr:"USUARIO",     to:"VENTA",           cf:"(1,1)",ct:"(0,n)",  lb:"realiza"},
+  {fr:"ROL",         to:"ROL_PERMISO",     cf:"(1,1)",ct:"(0,n)",  lb:"contiene"},
+  {fr:"ROL",         to:"REPORTE",         cf:"(1,1)",ct:"(0,n)",  lb:"genera"},
+  {fr:"PERMISO",     to:"ROL_PERMISO",     cf:"(1,1)",ct:"(0,n)",  lb:"incluido"},
+  {fr:"VENTA",       to:"METODO_PAGO",     cf:"(n,1)",ct:"(1,1)",  lb:"usa"},
+  {fr:"VENTA",       to:"DETALLE_VENTA",   cf:"(1,1)",ct:"(1,n)",  lb:"incluye"},
+  {fr:"PRODUCTO",    to:"DETALLE_VENTA",   cf:"(1,1)",ct:"(0,n)",  lb:"aparece"},
+  {fr:"PRODUCTO",    to:"CATEGORIA",       cf:"(n,1)",ct:"(1,1)",  lb:"pertenece"},
+  {fr:"PRODUCTO",    to:"MOVIMIENTO_INV",  cf:"(1,1)",ct:"(0,n)",  lb:"registra"},
+  {fr:"REPORTE",     to:"DASHBOARD",       cf:"(1,1)",ct:"(0,n)",  lb:"visualiza"},
+  {fr:"ROL_PERMISO", to:"LOG_AUDITORIA",   cf:"(1,1)",ct:"(0,n)",  lb:"audita"},
+  {fr:"CAMARA",      to:"GRABACION",       cf:"(1,1)",ct:"(0,n)",  lb:"captura"},
+  {fr:"CAMARA",      to:"ALERTA_CAMARA",   cf:"(1,1)",ct:"(0,n)",  lb:"dispara"},
+  {fr:"USUARIO",     to:"IA_CONVERSACION", cf:"(1,1)",ct:"(0,n)",  lb:"inicia"},
+  {fr:"IA_MENSAJE",  to:"IA_CONVERSACION", cf:"(n,1)",ct:"(1,1)",  lb:"pertenece"},
+];
+
+/* ═══════════════════════════════════════════════════════════
+   STATE — declared FIRST, used everywhere
+═══════════════════════════════════════════════════════════ */
+const G = {
+  zoom: 0.19,
+  panX: 0, panY: 0,
+  attrsVisible: true,
+  modsVisible: true,
+  focusMode: false,
+  focusId: null,
+  selectedId: null,
+};
+let ENTS = {};         // deep copy of DEFAULT_ENTITIES (positions mutable)
+let attrPos = {};      // { "ENTID_i": {x,y} } overrides for attribute circles
+
+/* ═══════════════════════════════════════════════════════════
+   PRECOMPUTE
+═══════════════════════════════════════════════════════════ */
+const relCount = {};
+function recomputeRelCount() {
+  for (const k in ENTS) relCount[k] = 0;
+  RELATIONS.forEach(r => {
+    if (relCount[r.fr] !== undefined) relCount[r.fr]++;
+    if (relCount[r.to] !== undefined) relCount[r.to]++;
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SVG NAMESPACE HELPER
+═══════════════════════════════════════════════════════════ */
+const NS = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs, cls) {
+  const el = document.createElementNS(NS, tag);
+  if (cls) el.setAttribute("class", cls);
+  for (const [k,v] of Object.entries(attrs||{})) el.setAttribute(k, v);
+  return el;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GEOMETRY
+═══════════════════════════════════════════════════════════ */
+function entCx(id){ const e=ENTS[id]; return e.x+e.w/2; }
+function entCy(id){ const e=ENTS[id]; return e.y+e.h/2; }
+
+// Border intersection of entity rectangle toward (tx,ty)
+function rectEdge(id, tx, ty) {
+  const e = ENTS[id];
+  const cx=e.x+e.w/2, cy=e.y+e.h/2;
+  const dx=tx-cx, dy=ty-cy;
+  const adx=Math.abs(dx), ady=Math.abs(dy);
+  if (adx < 0.001 && ady < 0.001) return {x:cx,y:cy};
+  const hw=e.w/2, hh=e.h/2;
+  if (adx*hh > ady*hw) {
+    const s=dx>0?1:-1;
+    return {x:cx+s*hw, y:cy+dy*(hw/adx)};
+  }
+  const s=dy>0?1:-1;
+  return {x:cx+dx*(hh/ady), y:cy+s*hh};
+}
+
+// Midpoint of Bezier at t=0.5
+function bezierMid(p0, cp1, cp2, p3) {
+  const t=0.5, it=0.5;
+  return {
+    x: it*it*it*p0.x + 3*it*it*t*cp1.x + 3*it*t*t*cp2.x + t*t*t*p3.x,
+    y: it*it*it*p0.y + 3*it*it*t*cp1.y + 3*it*t*t*cp2.y + t*t*t*p3.y,
+  };
+}
+// Bezier point at t
+function bezierPt(p0,cp1,cp2,p3,t){
+  const it=1-t;
+  return {
+    x: it*it*it*p0.x+3*it*it*t*cp1.x+3*it*t*t*cp2.x+t*t*t*p3.x,
+    y: it*it*it*p0.y+3*it*it*t*cp1.y+3*it*t*t*cp2.y+t*t*t*p3.y,
+  };
+}
+
+/* build control points for a pleasant cubic Bezier */
+function makeCurve(sid, tid) {
+  const sc = {x:entCx(sid), y:entCy(sid)};
+  const tc = {x:entCx(tid), y:entCy(tid)};
+  const dx=tc.x-sc.x, dy=tc.y-sc.y;
+  const dist = Math.hypot(dx,dy)||1;
+  const offset = Math.min(dist*0.28, 160);
+  // Slight perpendicular bow so parallel edges don't overlap
+  const px=-dy/dist*offset, py=dx/dist*offset;
+  const cp1={x:sc.x+dx*0.35+px, y:sc.y+dy*0.35+py};
+  const cp2={x:tc.x-dx*0.35+px, y:tc.y-dy*0.35+py};
+  const mid = bezierMid(sc,cp1,cp2,tc);
+  const p0 = rectEdge(sid, cp1.x, cp1.y);
+  const p3 = rectEdge(tid, cp2.x, cp2.y);
+  const pFrom = bezierPt(sc,cp1,cp2,tc,0.1);
+  const pTo   = bezierPt(sc,cp1,cp2,tc,0.9);
+  const eFrom = rectEdge(sid, pFrom.x, pFrom.y);
+  const eTo   = rectEdge(tid, pTo.x, pTo.y);
+  return {p0, cp1, cp2, p3, mid, eFrom, eTo};
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — MODULES
+═══════════════════════════════════════════════════════════ */
+function renderModules() {
+  const g = document.getElementById("g-modules");
+  g.innerHTML = "";
+  if (!G.modsVisible) return;
+  const mods = {};
+  for (const id in ENTS) {
+    const e = ENTS[id], m = e.module;
+    if (!mods[m]) mods[m]={x1:Infinity,y1:Infinity,x2:-Infinity,y2:-Infinity};
+    mods[m].x1=Math.min(mods[m].x1,e.x);   mods[m].y1=Math.min(mods[m].y1,e.y);
+    mods[m].x2=Math.max(mods[m].x2,e.x+e.w); mods[m].y2=Math.max(mods[m].y2,e.y+e.h);
+  }
+  for (const [mn, b] of Object.entries(mods)) {
+    const pad=44, lp=16, tw=22;
+    const rx=b.x1-pad, ry=b.y1-pad-tw, rw=b.x2-b.x1+pad*2, rh=b.y2-b.y1+pad*2+tw;
+    const rect=svgEl("rect",{x:rx,y:ry,width:rw,height:rh,rx:18,fill:MOD_VARS[mn]||"var(--mod-log)",stroke:"var(--border)","stroke-dasharray":"6 4","stroke-width":1},"module-rect");
+    g.appendChild(rect);
+    const txt=svgEl("text",{x:rx+lp,y:ry+tw-2,fill:ENT_COLORS[mn]||"#64748b"},"module-lbl");
+    txt.textContent=mn;
+    g.appendChild(txt);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — ATTRIBUTES
+═══════════════════════════════════════════════════════════ */
+function renderAttributes() {
+  const g = document.getElementById("g-attrs");
+  g.innerHTML = "";
+  if (!G.attrsVisible) return;
+  const dimAll = G.selectedId || G.focusMode;
+
+  for (const [id, ent] of Object.entries(ENTS)) {
+    const cx=entCx(id), cy=entCy(id);
+    const n = ent.attrs.length;
+    if (!n) continue;
+    for (let i=0; i<n; i++) {
+      const key=`${id}_${i}`;
+      let ax,ay;
+      if (attrPos[key]) {
+        ax=attrPos[key].x; ay=attrPos[key].y;
+      } else {
+        // place them in a fan, avoiding directions used by relations
+        let angle = (i/n) * Math.PI*2 - Math.PI/2;
+        const radius = 170;
+        ax = cx + Math.cos(angle)*radius;
+        ay = cy + Math.sin(angle)*radius;
+        attrPos[key]={x:ax,y:ay};
+      }
+      const a = ent.attrs[i];
+      const isDim = dimAll && id !== G.selectedId && id !== G.focusId;
+      const lineEl=svgEl("line",{x1:cx,y1:cy,x2:ax,y2:ay},"attr-line"+(isDim?" dimmed":""));
+      g.appendChild(lineEl);
+      let kls="attr-circ"+(a.pk?" pk":a.fk?" fk":"")+(isDim?" dimmed":"");
+      const circ=svgEl("circle",{cx:ax,cy:ay,r:30},kls);
+      circ.setAttribute("data-key",key);
+      circ.addEventListener("mousedown", e=>startDragAttr(e,key));
+      g.appendChild(circ);
+      const txt=svgEl("text",{x:ax,y:ay},"attr-text"+(isDim?" dimmed":""));
+      txt.textContent=a.n.length>9?a.n.slice(0,8)+"…":a.n;
+      g.appendChild(txt);
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — RELATIONS
+═══════════════════════════════════════════════════════════ */
+function renderRelations() {
+  const g = document.getElementById("g-rels");
+  g.innerHTML = "";
+  RELATIONS.forEach((rel,idx) => {
+    if (!ENTS[rel.fr] || !ENTS[rel.to]) return;
+    const c = makeCurve(rel.fr, rel.to);
+    const isActive = G.selectedId && (rel.fr===G.selectedId || rel.to===G.selectedId);
+    const inFocus  = G.focusMode && (rel.fr===G.focusId || rel.to===G.focusId);
+    const dimmed   = (G.selectedId && !isActive) || (G.focusMode && !inFocus);
+    const activeFlag = isActive||inFocus;
+
+    // Bezier path
+    const d=`M${c.p0.x},${c.p0.y} C${c.cp1.x},${c.cp1.y} ${c.cp2.x},${c.cp2.y} ${c.p3.x},${c.p3.y}`;
+    const path=svgEl("path",{d},"rel-path"+(dimmed?" dimmed":activeFlag?" active":""));
+    g.appendChild(path);
+
+    // Diamond
+    const {x:mx,y:my}=c.mid;
+    const dw=88,dh=44;
+    const pts=`${mx},${my-dh/2} ${mx+dw/2},${my} ${mx},${my+dh/2} ${mx-dw/2},${my}`;
+    const dia=svgEl("polygon",{points:pts},"dia-poly"+(dimmed?" dimmed":activeFlag?" active":""));
+    g.appendChild(dia);
+    const dtxt=svgEl("text",{x:mx,y:my},"dia-text"+(dimmed?" dimmed":activeFlag?" active":""));
+    dtxt.setAttribute("fill", dimmed?"var(--muted)":"var(--txt)");
+    dtxt.textContent=rel.lb;
+    g.appendChild(dtxt);
+
+    // Cardinality labels — with bg rect for readability
+    [[c.eFrom,rel.cf],[c.eTo,rel.ct]].forEach(([pt,txt])=>{
+      const tw=txt.length*7+6, th=14;
+      const bg=svgEl("rect",{x:pt.x-tw/2,y:pt.y-th/2-8,width:tw,height:th,rx:3,fill:"var(--bg)",opacity:.88});
+      g.appendChild(bg);
+      const ct=svgEl("text",{x:pt.x,y:pt.y-3},"card-text"+(dimmed?" dimmed":activeFlag?" active":""));
+      ct.setAttribute("fill",dimmed?"var(--muted)":"var(--txt)");
+      ct.textContent=txt;
+      g.appendChild(ct);
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — ENTITIES
+═══════════════════════════════════════════════════════════ */
+function renderEntities() {
+  const g = document.getElementById("g-ents");
+  g.innerHTML = "";
+  for (const [id, ent] of Object.entries(ENTS)) {
+    const isSelected = id===G.selectedId;
+    const inFocus = G.focusMode && id===G.focusId;
+    const isRelated = G.selectedId && RELATIONS.some(r=>(r.fr===G.selectedId&&r.to===id)||(r.to===G.selectedId&&r.fr===id));
+    const isDimmed = (G.selectedId && !isSelected && !isRelated) || (G.focusMode && !isFocusRelated(id));
+
+    const grp=svgEl("g",{"data-id":id},"ent-g"+(isSelected?" selected":isDimmed?" dimmed":""));
+    grp.style.cursor="move";
+
+    // Shadow and rect
+    const rc=svgEl("rect",{x:0,y:0,width:ent.w,height:ent.h,rx:10,fill:"var(--ent-fill)",
+      stroke:ENT_COLORS[ent.module]||"var(--ent-stroke)","stroke-width":isSelected?"3":"2",
+      filter:"drop-shadow(0 3px 10px rgba(0,0,0,.1))"});
+    grp.appendChild(rc);
+
+    // Color accent stripe on top
+    const stripe=svgEl("rect",{x:0,y:0,width:ent.w,height:6,rx:10,
+      fill:ENT_COLORS[ent.module]||"#64748b"});
+    grp.appendChild(stripe);
+    const stripe2=svgEl("rect",{x:0,y:3,width:ent.w,height:3,
+      fill:ENT_COLORS[ent.module]||"#64748b"});
+    grp.appendChild(stripe2);
+
+    // Name text
+    const nm=svgEl("text",{x:ent.w/2,y:ent.h/2+2},"ent-text");
+    nm.setAttribute("fill","var(--txt)");
+    nm.textContent=id;
+    grp.appendChild(nm);
+
+    // Module badge (tiny, bottom)
+    const mt=svgEl("text",{x:ent.w/2,y:ent.h-8},"ent-mod-text");
+    mt.setAttribute("fill",ENT_COLORS[ent.module]||"#64748b");
+    mt.textContent=ent.module;
+    grp.appendChild(mt);
+
+    grp.setAttribute("transform",`translate(${ent.x},${ent.y})`);
+    grp.addEventListener("mousedown", e=>startDragEnt(e,id));
+    grp.addEventListener("click", e=>{e.stopPropagation(); selectEntity(id);});
+    grp.addEventListener("dblclick", e=>{e.stopPropagation(); enterFocus(id);});
+    g.appendChild(grp);
+  }
+}
+
+function isFocusRelated(id) {
+  if (!G.focusMode) return true;
+  if (id===G.focusId) return true;
+  return RELATIONS.some(r=>(r.fr===G.focusId&&r.to===id)||(r.to===G.focusId&&r.fr===id));
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FULL RENDER (rebuilds SVG — called on major state changes)
+═══════════════════════════════════════════════════════════ */
+function renderAll() {
+  renderModules();
+  renderRelations();
+  renderAttributes();
+  renderEntities();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INCREMENTAL UPDATES (drag — only update positions, no rebuild)
+═══════════════════════════════════════════════════════════ */
+function updateEntPos(id) {
+  const ent = ENTS[id];
+  const grp = document.querySelector(`#g-ents [data-id="${id}"]`);
+  if (grp) grp.setAttribute("transform",`translate(${ent.x},${ent.y})`);
+  renderModules();
+  renderRelations();
+}
+function updateAttrPos(key) {
+  renderAttributes();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SELECTION / FOCUS
+═══════════════════════════════════════════════════════════ */
+function selectEntity(id) {
+  G.selectedId = id;
+  G.focusMode  = false;
+  renderAll();
+  document.querySelectorAll(".sb-item").forEach(el=>el.classList.toggle("sel",el.dataset.id===id));
+
+  const ent=ENTS[id];
+  document.getElementById("ip-icon").textContent=ENT_ICONS[ent.module]||"📦";
+  document.getElementById("ip-name").textContent=id;
+  document.getElementById("ip-mod").textContent=ent.module;
+  document.getElementById("ip-cnt").textContent=relCount[id]||0;
+  document.getElementById("ip-nattrs").textContent=ent.attrs.length;
+
+  // Attr table
+  const tbody=document.getElementById("ip-tbody");
+  tbody.innerHTML=ent.attrs.map(a=>{
+    const kbadge=a.pk?`<span class="kbadge pk">PK</span>`:a.fk?`<span class="kbadge fk">FK</span>`:'';
+    return `<tr><td>${kbadge}</td><td>${a.n}</td><td style="color:var(--muted)">${a.t}</td></tr>`;
+  }).join('');
+
+  // Related pills
+  const related=new Set();
+  RELATIONS.forEach(r=>{ if(r.fr===id) related.add(r.to); if(r.to===id) related.add(r.fr); });
+  document.getElementById("ip-pills").innerHTML=[...related].map(n=>
+    `<span class="ip-pill" onclick="selectEntity('${n}')">${n}</span>`).join('');
+
+  document.getElementById("info-panel").classList.add("open");
+}
+
+function clearSelection() {
+  G.selectedId=null; G.focusMode=false; G.focusId=null;
+  document.getElementById("info-panel").classList.remove("open");
+  document.getElementById("focus-exit").classList.remove("vis");
+  document.querySelectorAll(".sb-item").forEach(el=>el.classList.remove("sel"));
+  renderAll();
+}
+
+function enterFocus(id) {
+  G.focusMode=true; G.focusId=id; G.selectedId=id;
+  document.getElementById("focus-exit").classList.add("vis");
+  selectEntity(id);
+  renderAll();
+}
+function exitFocus() {
+  G.focusMode=false; G.focusId=null;
+  document.getElementById("focus-exit").classList.remove("vis");
+  renderAll();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DRAG — ENTITIES
+   FIX: correctly account for pan offset in world coordinates
+═══════════════════════════════════════════════════════════ */
+let dragEnt={active:false,id:null,ox:0,oy:0,sx:0,sy:0};
+function startDragEnt(e,id) {
+  e.stopPropagation(); e.preventDefault();
+  dragEnt.active=true; dragEnt.id=id;
+  dragEnt.ox=ENTS[id].x; dragEnt.oy=ENTS[id].y;
+  // world coords = (screen - pan) / zoom
+  dragEnt.sx=(e.clientX - canvasRect().left - G.panX)/G.zoom;
+  dragEnt.sy=(e.clientY - canvasRect().top  - G.panY)/G.zoom;
+  document.body.style.cursor="grabbing";
+}
+function handleDragEnt(e) {
+  if (!dragEnt.active) return;
+  const wx=(e.clientX - canvasRect().left - G.panX)/G.zoom;
+  const wy=(e.clientY - canvasRect().top  - G.panY)/G.zoom;
+  ENTS[dragEnt.id].x = dragEnt.ox + wx - dragEnt.sx;
+  ENTS[dragEnt.id].y = dragEnt.oy + wy - dragEnt.sy;
+  updateEntPos(dragEnt.id);
+  updateAttrPos(dragEnt.id);
+}
+function endDragEnt() {
+  if (!dragEnt.active) return;
+  dragEnt.active=false;
+  document.body.style.cursor="";
+  savePositions();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DRAG — ATTRIBUTES
+═══════════════════════════════════════════════════════════ */
+let dragAttr={active:false,key:null,ox:0,oy:0,sx:0,sy:0};
+function startDragAttr(e,key) {
+  e.stopPropagation(); e.preventDefault();
+  dragAttr.active=true; dragAttr.key=key;
+  dragAttr.ox=attrPos[key]?.x||0; dragAttr.oy=attrPos[key]?.y||0;
+  dragAttr.sx=(e.clientX - canvasRect().left - G.panX)/G.zoom;
+  dragAttr.sy=(e.clientY - canvasRect().top  - G.panY)/G.zoom;
+  document.body.style.cursor="grabbing";
+}
+function handleDragAttr(e) {
+  if (!dragAttr.active) return;
+  const wx=(e.clientX - canvasRect().left - G.panX)/G.zoom;
+  const wy=(e.clientY - canvasRect().top  - G.panY)/G.zoom;
+  attrPos[dragAttr.key]={x:dragAttr.ox+wx-dragAttr.sx, y:dragAttr.oy+wy-dragAttr.sy};
+  renderAttributes();
+}
+function endDragAttr() {
+  if (!dragAttr.active) return;
+  dragAttr.active=false;
+  document.body.style.cursor="";
+  savePositions();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAN
+═══════════════════════════════════════════════════════════ */
+let pan={active:false,sx:0,sy:0,ox:0,oy:0};
+function startPan(e) {
+  if (e.button!==0) return;
+  if (e.target.closest("[data-id],.attr-circ")) return;
+  pan.active=true;
+  pan.sx=e.clientX; pan.sy=e.clientY;
+  pan.ox=G.panX; pan.oy=G.panY;
+  document.getElementById("canvas-area").classList.add("panning");
+}
+function handlePan(e) {
+  if (!pan.active) return;
+  G.panX=pan.ox+(e.clientX-pan.sx);
+  G.panY=pan.oy+(e.clientY-pan.sy);
+  applyTransform();
+}
+function endPan() {
+  pan.active=false;
+  document.getElementById("canvas-area").classList.remove("panning");
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ZOOM
+   FIX: zoom toward cursor position
+═══════════════════════════════════════════════════════════ */
+function handleWheel(e) {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.1 : 0.91;
+  const r = canvasRect();
+  const ox=e.clientX-r.left, oy=e.clientY-r.top;
+  const wx=(ox-G.panX)/G.zoom, wy=(oy-G.panY)/G.zoom;
+  G.zoom = Math.min(Math.max(0.08, G.zoom*factor), 2.5);
+  G.panX = ox - wx*G.zoom;
+  G.panY = oy - wy*G.zoom;
+  applyTransform();
+}
+function zoomIn()  { zoomBy(1.2); }
+function zoomOut() { zoomBy(0.83); }
+function zoomBy(f) {
+  const r=canvasRect();
+  const ox=r.width/2, oy=r.height/2;
+  const wx=(ox-G.panX)/G.zoom, wy=(oy-G.panY)/G.zoom;
+  G.zoom=Math.min(Math.max(0.08,G.zoom*f),2.5);
+  G.panX=ox-wx*G.zoom; G.panY=oy-wy*G.zoom;
+  applyTransform();
+}
+function fitAll() {
+  let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
+  for (const e of Object.values(ENTS)) {
+    x1=Math.min(x1,e.x); y1=Math.min(y1,e.y);
+    x2=Math.max(x2,e.x+e.w); y2=Math.max(y2,e.y+e.h);
+  }
+  const r=canvasRect(), pad=80;
+  const sx=(r.width-pad*2)/(x2-x1), sy=(r.height-pad*2)/(y2-y1);
+  G.zoom=Math.min(sx,sy,0.9);
+  G.panX=(r.width-(x2-x1)*G.zoom)/2-x1*G.zoom;
+  G.panY=(r.height-(y2-y1)*G.zoom)/2-y1*G.zoom;
+  applyTransform();
+}
+function applyTransform() {
+  document.getElementById("svg-root").style.transform=
+    `translate(${G.panX}px,${G.panY}px) scale(${G.zoom})`;
+  document.getElementById("zoom-display").textContent=Math.round(G.zoom*100)+"%";
+}
+
+let _canvasRect=null;
+function canvasRect() {
+  if (!_canvasRect) _canvasRect=document.getElementById("canvas-area").getBoundingClientRect();
+  return _canvasRect;
+}
+window.addEventListener("resize",()=>{ _canvasRect=null; fitAll(); });
+
+/* ═══════════════════════════════════════════════════════════
+   TOGGLES
+═══════════════════════════════════════════════════════════ */
+function toggleAttrs() {
+  G.attrsVisible=!G.attrsVisible;
+  document.getElementById("btn-attrs").classList.toggle("active",G.attrsVisible);
+  renderAll();
+}
+function toggleMods() {
+  G.modsVisible=!G.modsVisible;
+  document.getElementById("btn-mods").classList.toggle("active",G.modsVisible);
+  renderAll();
+}
+function toggleTheme() {
+  const html=document.documentElement;
+  const t=html.getAttribute("data-theme")==="dark"?"light":"dark";
+  html.setAttribute("data-theme",t);
+  try{localStorage.setItem("mer_theme",t);}catch(e){}
+  renderAll();
+}
+function toggleValPanel() {
+  document.getElementById("val-panel").classList.toggle("collapsed");
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════════════ */
+function buildSidebar() {
+  const mods={};
+  for (const [id,e] of Object.entries(ENTS)) {
+    if (!mods[e.module]) mods[e.module]=[];
+    mods[e.module].push(id);
+  }
+  let html="";
+  for (const [mn, ids] of Object.entries(mods)) {
+    const c=ENT_COLORS[mn]||"#64748b";
+    const ic=ENT_ICONS[mn]||"📁";
+    html+=`<div class="sb-mod-head" style="background:${c}18;color:${c}">${ic} ${mn}</div>`;
+    ids.forEach(id=>{
+      const cnt=relCount[id]||0;
+      html+=`<div class="sb-item" data-id="${id}" onclick="selectEntity('${id}');focusOnEntity('${id}')">
+        <span>${id}</span><span class="cnt ${cnt>=3?'hi':''}">${cnt}</span></div>`;
+    });
+  }
+  document.getElementById("sb-list").innerHTML=html;
+  document.getElementById("st-ents").textContent=Object.keys(ENTS).length;
+  document.getElementById("st-rels").textContent=RELATIONS.length;
+}
+function filterSidebar(q) {
+  const v=(q||"").toLowerCase();
+  document.querySelectorAll(".sb-item").forEach(el=>{
+    el.style.display=(!v||el.dataset.id.toLowerCase().includes(v))?"":"none";
+  });
+}
+function focusOnEntity(id) {
+  const e=ENTS[id], r=canvasRect();
+  const cx=e.x+e.w/2, cy=e.y+e.h/2;
+  G.panX=r.width/2-cx*G.zoom;
+  G.panY=r.height/2-cy*G.zoom;
+  applyTransform();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VALIDATION PANEL
+═══════════════════════════════════════════════════════════ */
+function buildValPanel() {
+  let ok=0,warn=0,html="";
+  Object.keys(ENTS).sort().forEach(id=>{
+    const c=relCount[id]||0;
+    const good=c>=1&&c<=3;
+    if(good) ok++; else warn++;
+    html+=`<div class="vp-row ${good?"vp-ok":"vp-warn"}" onclick="selectEntity('${id}')">
+      <span>${good?"✅":"⚠️"} ${id}</span><span class="vp-badge">${c}</span></div>`;
+  });
+  document.getElementById("vp-body").innerHTML=html;
+  document.getElementById("vp-sum").textContent=`${ok}/${ok+warn} ✅`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT SVG (self-contained)
+═══════════════════════════════════════════════════════════ */
+function exportSVG() {
+  let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
+  for (const e of Object.values(ENTS)) {
+    x1=Math.min(x1,e.x-60); y1=Math.min(y1,e.y-60);
+    x2=Math.max(x2,e.x+e.w+60); y2=Math.max(y2,e.y+e.h+60);
+  }
+  const svgRoot=document.getElementById("svg-root");
+  const clone=svgRoot.cloneNode(true);
+  clone.setAttribute("xmlns",NS);
+  clone.setAttribute("viewBox",`${x1} ${y1} ${x2-x1} ${y2-y1}`);
+  clone.setAttribute("width",x2-x1); clone.setAttribute("height",y2-y1);
+  clone.style.transform="";
+  // Inline styles
+  const styles=Array.from(document.styleSheets[0]?.cssRules||[]).map(r=>r.cssText).join("\n");
+  const styleEl=document.createElementNS(NS,"style"); styleEl.textContent=styles;
+  clone.insertBefore(styleEl,clone.firstChild);
+  const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:"image/svg+xml"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="intersoft_mer.svg"; a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PERSISTENCE
+═══════════════════════════════════════════════════════════ */
+function savePositions() {
+  try {
+    const pos={};
+    for (const id in ENTS) pos[id]={x:ENTS[id].x,y:ENTS[id].y};
+    localStorage.setItem("mer_pos",JSON.stringify(pos));
+    localStorage.setItem("mer_attrs",JSON.stringify(attrPos));
+  } catch(e){}
+}
+function loadPositions() {
+  try {
+    const p=localStorage.getItem("mer_pos");
+    if (p) { const d=JSON.parse(p); for(const id in d)if(ENTS[id]){ENTS[id].x=d[id].x;ENTS[id].y=d[id].y;}}
+    const a=localStorage.getItem("mer_attrs");
+    if (a) attrPos=JSON.parse(a);
+  } catch(e){}
+}
+function resetPositions() {
+  for (const id in ENTS) { ENTS[id].x=DEFAULT_POSITIONS[id].x; ENTS[id].y=DEFAULT_POSITIONS[id].y; }
+  attrPos={};
+  try{localStorage.removeItem("mer_pos");localStorage.removeItem("mer_attrs");}catch(e){}
+  renderAll();
+  fitAll();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EVENT LISTENERS
+═══════════════════════════════════════════════════════════ */
+function setupEvents() {
+  const ca=document.getElementById("canvas-area");
+  ca.addEventListener("mousedown",startPan);
+  ca.addEventListener("wheel",handleWheel,{passive:false});
+  ca.addEventListener("click",e=>{
+    if(e.target===ca||e.target===document.getElementById("svg-root"))clearSelection();
+  });
+  document.addEventListener("mousemove",e=>{
+    handleDragEnt(e);
+    handleDragAttr(e);
+    handlePan(e);
+  });
+  document.addEventListener("mouseup",()=>{
+    endDragEnt(); endDragAttr(); endPan();
+  });
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape"){ if(G.focusMode) exitFocus(); else clearSelection(); }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+function init() {
+  // Deep copy entities
+  ENTS={};
+  for (const [id,e] of Object.entries(DEFAULT_ENTITIES)) {
+    ENTS[id]={...e, attrs:[...e.attrs]};
+  }
+  recomputeRelCount();
+  loadPositions();
+  // Restore theme
+  try{ const t=localStorage.getItem("mer_theme"); if(t) document.documentElement.setAttribute("data-theme",t); }catch(e){}
+  buildSidebar();
+  buildValPanel();
+  setupEvents();
+  renderAll();
+  setTimeout(fitAll, 80);
+  document.getElementById("btn-attrs").classList.add("active");
+  document.getElementById("btn-mods").classList.add("active");
+}
+init();
+</script>
+</body>
+</html>
